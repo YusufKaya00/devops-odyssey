@@ -16,6 +16,7 @@ interface LevelInfo {
 
 interface UserData {
   completedQuests: string[];
+  completedSteps?: string[];
   experiencePoints: number;
   streak: number;
   lastActiveDate: string | null;
@@ -121,6 +122,8 @@ function App() {
 
   // Verification mode: in-browser simulation vs actual local command verification
   const [verificationMode, setVerificationMode] = useState<'simulated' | 'local'>('simulated');
+  const [quizAnswers, setQuizAnswers] = useState<Record<string, number>>({});
+  const [quizCheckedModule, setQuizCheckedModule] = useState<number | null>(null);
 
   // Load User Stats & Config
   const loadStatus = async () => {
@@ -141,14 +144,17 @@ function App() {
           setSelectedOS('Linux');
         }
       }
-    } catch (e: any) {
-      console.error(e);
+    } catch (error: unknown) {
+      console.error(error);
       setApiError('Ensure that the Express server is running. Launch via `npm run dev`.');
     }
   };
 
   useEffect(() => {
-    loadStatus();
+    const timer = window.setTimeout(() => {
+      void loadStatus();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const totalQuestsCount = roadmapModules.reduce((acc, mod) => acc + mod.quests.length, 0);
@@ -178,7 +184,7 @@ function App() {
       if (result.success && result.data) {
         setUserData(result.data);
       }
-    } catch (e: any) {
+    } catch {
       setVerifyResult({
         success: false,
         message: 'Could not connect to the verification server. Ensure the backend is active.'
@@ -199,7 +205,7 @@ function App() {
         setActiveQuest(null);
         setVerifyResult(null);
       }
-    } catch (e) {
+    } catch {
       alert("Error resetting progress.");
     }
   };
@@ -221,13 +227,8 @@ function App() {
   // Select Module Action
   const handleModuleClick = (modId: number) => {
     setActiveTab(modId);
-    const mod = roadmapModules.find(m => m.id === modId);
-    if (mod && mod.quests.length > 0) {
-      setActiveQuest(mod.quests[0]);
-      setVerifyResult(null);
-    } else {
-      setActiveQuest(null);
-    }
+    setActiveQuest(null);
+    setVerifyResult(null);
   };
 
   // Find next recommended quest (First incomplete quest in order)
@@ -282,6 +283,175 @@ function App() {
     const completed = categoryQuests.filter(q => userData.completedQuests.includes(q.validatorKey)).length;
     return Math.round((completed / total) * 100);
   };
+
+  const isModuleComplete = (module: ModuleData) => {
+    if (!userData || module.quests.length === 0) return false;
+    return module.quests.every(q => userData.completedQuests.includes(q.validatorKey));
+  };
+
+  // If we are inside Focused Learning Lab mode
+  if (activeQuest && userData) {
+    const steps = activeQuest.interactiveSteps || [];
+    
+    // Find current active step index
+    let activeStepIdx = 0;
+    for (let i = 0; i < steps.length; i++) {
+      if (!userData.completedSteps?.includes(`${activeQuest.validatorKey}:${i}`)) {
+        activeStepIdx = i;
+        break;
+      }
+      activeStepIdx = i + 1;
+    }
+    
+    const allStepsDone = activeStepIdx >= steps.length;
+
+    const handleStepComplete = async (stepIdx: number) => {
+      // Call backend to save step completion progress
+      try {
+        const res = await fetch('http://localhost:5001/api/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            validatorKey: activeQuest.validatorKey,
+            difficulty: activeQuest.difficulty,
+            stepIndex: stepIdx
+          })
+        });
+        const result = await res.json();
+        if (result.success && result.data) {
+          setUserData(result.data);
+          
+          // If this was the last sub-step, trigger full quest completion automatically!
+          if (stepIdx === steps.length - 1) {
+            handleVerify(activeQuest, { isSimulated: true });
+          }
+        }
+      } catch (e) {
+        console.error('Failed to sync sub-step progress', e);
+      }
+    };
+
+    return (
+      <div className="focused-lab-layout">
+        {/* Header */}
+        <header className="focused-lab-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <button className="btn btn-secondary" onClick={() => setActiveQuest(null)} style={{ padding: '8px 16px' }}>
+              ← Exit Lab (Geri Dön)
+            </button>
+            <div>
+              <h2 style={{ fontSize: '18px', fontWeight: 800 }}>{activeQuest.title}</h2>
+              <span className={`quest-diff-badge diff-${activeQuest.difficulty}`} style={{ fontSize: '10px' }}>
+                {activeQuest.difficulty} Lab
+              </span>
+            </div>
+          </div>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <div className="profile-pill" style={{ padding: '6px 12px' }}>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontWeight: 700, fontSize: 13 }}>{userData.levelInfo.title}</div>
+                <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>
+                  Level {userData.levelInfo.level} • {userData.experiencePoints} XP
+                </div>
+              </div>
+              <div className="streak-counter">
+                <Icons.Flame />
+                <span>{userData.streak}</span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Lab Split View */}
+        <div className="focused-lab-body">
+          {/* LEFT PANEL: INSTRUCTIONS & DevOps Theory */}
+          <div className="focused-lab-left-panel">
+            {!allStepsDone ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                <div>
+                  <span className="step-count-badge">Step {activeStepIdx + 1} of {steps.length}</span>
+                  <h3 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', marginTop: '8px' }}>
+                    {steps[activeStepIdx]?.title}
+                  </h3>
+                </div>
+
+                <div className="theory-block">
+                  <h4 style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--primary-light)', marginBottom: '8px' }}>
+                    📖 DevOps Theory & Exam Prep
+                  </h4>
+                  <p style={{ fontSize: '14px', lineHeight: 1.6, color: 'var(--text-secondary)' }}>
+                    {steps[activeStepIdx]?.explanation}
+                  </p>
+                </div>
+
+                <div className="objective-block">
+                  <h4 style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--secondary)', marginBottom: '6px' }}>
+                    🎯 Objective
+                  </h4>
+                  <p style={{ fontSize: '14px', fontWeight: 600 }}>
+                    Type the following command in the terminal prompt:
+                  </p>
+                  <code className="cmd-highlight">{steps[activeStepIdx]?.expectedCommand}</code>
+                </div>
+
+                <div className="steps-progress-checklist">
+                  <h4 style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '10px' }}>
+                    Lab Progress
+                  </h4>
+                  {steps.map((s, idx) => {
+                    const isStepDone = userData.completedSteps?.includes(`${activeQuest.validatorKey}:${idx}`);
+                    const isStepActive = idx === activeStepIdx;
+                    return (
+                      <div key={idx} className={`checklist-item ${isStepActive ? 'active' : ''} ${isStepDone ? 'done' : ''}`}>
+                        <span className="chk-icon">{isStepDone ? '✓' : isStepActive ? '●' : '○'}</span>
+                        <span className="chk-text">{s.title}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.01)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
+                  <strong>Hint:</strong> {steps[activeStepIdx]?.hint}
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '40px 20px' }}>
+                <div style={{ fontSize: '64px' }}>🎉</div>
+                <h3 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--success)' }}>Lab Completed Successfully!</h3>
+                <p style={{ fontSize: '15px', color: 'var(--text-secondary)', maxWidth: '400px' }}>
+                  You have successfully completed all command simulations for <strong>{activeQuest.title}</strong>!
+                </p>
+                <div style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', padding: '16px', borderRadius: '12px', width: '100%' }}>
+                  <span style={{ fontSize: '13px', display: 'block', color: 'var(--text-secondary)' }}>Total Experience Earned</span>
+                  <strong style={{ fontSize: '24px', color: 'var(--success)' }}>
+                    +{steps.length * 20 + (activeQuest.difficulty === 'Beginner' ? 100 : activeQuest.difficulty === 'Intermediate' ? 200 : 300)} XP
+                  </strong>
+                </div>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button className="btn btn-primary" onClick={() => setActiveQuest(null)} style={{ padding: '12px 32px' }}>
+                    Return to Roadmap
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* RIGHT PANEL: INTERACTIVE TERMINAL SIMULATOR */}
+          <div className="focused-lab-right-panel">
+            <TerminalSimulator
+              key={activeQuest.validatorKey}
+              questId={activeQuest.title}
+              validatorKey={activeQuest.validatorKey}
+              interactiveSteps={steps}
+              completedSteps={userData.completedSteps || []}
+              onStepComplete={handleStepComplete}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="app-container">
@@ -671,6 +841,12 @@ function App() {
           (() => {
             const module = roadmapModules.find(m => m.id === activeTab);
             if (!module) return null;
+            const moduleComplete = isModuleComplete(module);
+            const quizScore = module.quiz
+              ? module.quiz.reduce((score, question, idx) => (
+                  quizAnswers[`${module.id}:${idx}`] === question.answerIndex ? score + 1 : score
+                ), 0)
+              : 0;
             return (
               <div className="module-view-layout">
                 
@@ -817,7 +993,9 @@ function App() {
                           <TerminalSimulator
                             questId={activeQuest.id}
                             validatorKey={activeQuest.validatorKey}
-                            onSuccess={(isSimulated) => handleVerify(activeQuest, { isSimulated })}
+                            interactiveSteps={activeQuest.interactiveSteps || []}
+                            completedSteps={userData?.completedSteps || []}
+                            onStepComplete={() => undefined}
                           />
                         </div>
                       ) : (
@@ -973,9 +1151,77 @@ function App() {
                       )}
                     </div>
                   ) : (
-                    <div className="glass-panel" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                      <Icons.Info />
-                      <p style={{ marginTop: '12px' }}>Select a quest on the left to start the simulation.</p>
+                    <div className="glass-panel" style={{ padding: '32px', color: 'var(--text-secondary)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-primary)', fontWeight: 800, fontSize: '18px', marginBottom: '12px' }}>
+                        <Icons.Info />
+                        <span>Module Checkpoint</span>
+                      </div>
+                      <p style={{ fontSize: '13px', marginBottom: '20px' }}>
+                        Select any quest on the left to enter the full-screen simulation lab. You can leave the lab at any time and return to this roadmap step.
+                      </p>
+
+                      {module.quiz && module.quiz.length > 0 && (
+                        <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                          <div>
+                            <h3 style={{ fontSize: '16px', color: 'var(--text-primary)', marginBottom: '4px' }}>Final Quiz</h3>
+                            <p style={{ fontSize: '12px', color: moduleComplete ? 'var(--text-muted)' : 'var(--warning)' }}>
+                              {moduleComplete
+                                ? 'All quests are complete. Answer the quiz to test whether the concepts stuck.'
+                                : 'Finish all quests in this module to unlock the recommended final quiz.'}
+                            </p>
+                          </div>
+
+                          {module.quiz.map((question, questionIdx) => {
+                            const answerKey = `${module.id}:${questionIdx}`;
+                            const selected = quizAnswers[answerKey];
+                            const checked = quizCheckedModule === module.id;
+                            const isCorrect = selected === question.answerIndex;
+                            return (
+                              <div key={answerKey} className="quiz-question">
+                                <div className="quiz-question-title">{questionIdx + 1}. {question.question}</div>
+                                <div className="quiz-options">
+                                  {question.options.map((option, optionIdx) => (
+                                    <button
+                                      key={option}
+                                      className={`quiz-option ${selected === optionIdx ? 'selected' : ''} ${checked && optionIdx === question.answerIndex ? 'correct' : ''} ${checked && selected === optionIdx && !isCorrect ? 'wrong' : ''}`}
+                                      onClick={() => {
+                                        setQuizAnswers(prev => ({ ...prev, [answerKey]: optionIdx }));
+                                        setQuizCheckedModule(null);
+                                      }}
+                                      disabled={!moduleComplete}
+                                    >
+                                      {option}
+                                    </button>
+                                  ))}
+                                </div>
+                                {checked && (
+                                  <p className={`quiz-explanation ${isCorrect ? 'correct' : 'wrong'}`}>
+                                    {isCorrect ? 'Correct. ' : 'Review this. '}{question.explanation}
+                                  </p>
+                                )}
+                              </div>
+                            );
+                          })}
+
+                          <button
+                            className="btn btn-primary"
+                            disabled={!moduleComplete || module.quiz.some((_, idx) => quizAnswers[`${module.id}:${idx}`] === undefined)}
+                            onClick={() => setQuizCheckedModule(module.id)}
+                          >
+                            Check Quiz
+                          </button>
+
+                          {quizCheckedModule === module.id && (
+                            <div className={`verify-result ${quizScore === module.quiz.length ? 'success' : 'error'}`} style={{ marginTop: 0 }}>
+                              {quizScore === module.quiz.length ? <Icons.Check /> : <Icons.Info />}
+                              <div>
+                                <strong>{quizScore}/{module.quiz.length} correct</strong>
+                                <p>{quizScore === module.quiz.length ? 'Great work. This module is ready to move forward.' : 'Revisit the explanations above, then try again.'}</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

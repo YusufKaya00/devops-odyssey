@@ -78,10 +78,46 @@ app.get('/api/status', async (req, res) => {
 
 // Verify a Quest
 app.post('/api/verify', async (req, res) => {
-  const { validatorKey, difficulty, isSimulated } = req.body;
+  const { validatorKey, difficulty, isSimulated, stepIndex } = req.body;
   
   if (!validatorKey) {
     return res.status(400).json({ success: false, message: "Missing validatorKey parameter." });
+  }
+
+  // Handle single sub-step verification
+  if (stepIndex !== undefined) {
+    try {
+      const data = await getUserData();
+      const stepKey = `${validatorKey}:${stepIndex}`;
+      if (!data.completedSteps) data.completedSteps = [];
+      
+      if (!data.completedSteps.includes(stepKey)) {
+        data.completedSteps.push(stepKey);
+        // Award 20 XP for completing a sub-step
+        data.experiencePoints += 20;
+        
+        // Update active date
+        const todayStr = new Date().toISOString().split('T')[0];
+        data.lastActiveDate = todayStr;
+        
+        await saveUserData(data);
+      }
+      
+      const levelInfo = calculateLevel(data.experiencePoints);
+      return res.json({
+        success: true,
+        message: `Step ${stepIndex + 1} verified and saved.`,
+        data: {
+          ...data,
+          levelInfo,
+          hostOS: process.platform,
+          storageMode: getStorageMode()
+        }
+      });
+    } catch (error) {
+      console.error('Error saving sub-step:', error);
+      return res.status(500).json({ success: false, message: "Error saving sub-step: " + error.message });
+    }
   }
 
   let result = { success: false, message: "" };
@@ -162,7 +198,7 @@ app.post('/api/verify', async (req, res) => {
 app.post('/api/reset', async (req, res) => {
   try {
     await resetUserData();
-    const defaultData = { completedQuests: [], experiencePoints: 0, streak: 0, lastActiveDate: null };
+    const defaultData = { completedQuests: [], completedSteps: [], experiencePoints: 0, streak: 0, lastActiveDate: null };
     res.json({
       success: true,
       message: "User progress reset successfully.",

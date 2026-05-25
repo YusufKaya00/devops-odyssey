@@ -16,7 +16,16 @@ CREATE TABLE IF NOT EXISTS completed_quests (
   PRIMARY KEY (user_id, quest_key)
 );
 
--- 3. Insert default local user (needed for the local dashboard engine to authenticate and store data)
+-- 3. Create completed_steps table to track granular steps completed within quests
+CREATE TABLE IF NOT EXISTS completed_steps (
+  user_id VARCHAR(50) REFERENCES users(id) ON DELETE CASCADE,
+  quest_key VARCHAR(100) NOT NULL,
+  step_index INT NOT NULL,
+  completed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, quest_key, step_index)
+);
+
+-- 4. Insert default local user (needed for the local dashboard engine to authenticate and store data)
 INSERT INTO users (id, experience_points, streak, last_active_date)
 VALUES ('local_user', 0, 0, NULL)
 ON CONFLICT (id) DO NOTHING;
