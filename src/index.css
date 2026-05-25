@@ -905,3 +905,122 @@ body {
   height: 45px;
   border: 2px solid #b45309;
 }
+
+/* Terminal Simulator styling */
+.terminal-simulator-container {
+  background: #05070c;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 15px rgba(139, 92, 246, 0.1);
+  display: flex;
+  flex-direction: column;
+  height: 380px;
+  margin-top: 10px;
+  cursor: text;
+}
+
+.terminal-simulator-header {
+  background: rgba(15, 23, 42, 0.8);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  user-select: none;
+}
+
+.terminal-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.term-btn {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.term-close {
+  background: #ef4444;
+}
+
+.term-minimize {
+  background: #f59e0b;
+}
+
+.term-expand {
+  background: #10b981;
+}
+
+.terminal-title {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 350px;
+}
+
+.terminal-body {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #38bdf8; /* Light blue by default */
+}
+
+.terminal-log-line {
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.log-input {
+  color: #f8fafc; /* White text for commands typed */
+}
+
+.log-output {
+  color: #38bdf8; /* Cyan */
+}
+
+.log-error {
+  color: #fca5a5; /* Light red */
+}
+
+.log-success {
+  color: #6ee7b7; /* Light green */
+  font-weight: 700;
+}
+
+.terminal-input-line {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.term-prompt {
+  color: #a78bfa; /* Violet prompt */
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.terminal-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #ffffff;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  padding: 0;
+  caret-color: #a78bfa;
+}
+

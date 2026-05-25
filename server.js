@@ -78,21 +78,31 @@ app.get('/api/status', async (req, res) => {
 
 // Verify a Quest
 app.post('/api/verify', async (req, res) => {
-  const { validatorKey, difficulty } = req.body;
+  const { validatorKey, difficulty, isSimulated } = req.body;
   
   if (!validatorKey) {
     return res.status(400).json({ success: false, message: "Missing validatorKey parameter." });
   }
 
-  const validator = validators[validatorKey];
-  if (!validator) {
-    return res.status(404).json({ success: false, message: `Validator for '${validatorKey}' not found.` });
+  let result = { success: false, message: "" };
+  if (isSimulated) {
+    result = { success: true, message: `[Simulated] Quest '${validatorKey}' completed successfully in the browser simulator!` };
+  } else {
+    const validator = validators[validatorKey];
+    if (!validator) {
+      return res.status(404).json({ success: false, message: `Validator for '${validatorKey}' not found.` });
+    }
+
+    console.log(`Running validator for quest: ${validatorKey}...`);
+    try {
+      result = await validator();
+    } catch (error) {
+      console.error(`Error during validation of ${validatorKey}:`, error);
+      return res.status(500).json({ success: false, message: "Internal validation server error: " + error.message });
+    }
   }
 
-  console.log(`Running validator for quest: ${validatorKey}...`);
   try {
-    const result = await validator();
-    
     if (result.success) {
       const data = await getUserData();
       

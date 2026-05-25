@@ -5,6 +5,8 @@ import {
   devopsTools
 } from './data/roadmapData';
 import type { ModuleData, Quest } from './data/roadmapData';
+import { TerminalSimulator } from './components/TerminalSimulator';
+
 
 interface LevelInfo {
   level: number;
@@ -117,6 +119,9 @@ function App() {
   // OS Tab Selection inside Quests panel
   const [selectedOS, setSelectedOS] = useState<'Windows' | 'Linux'>('Windows');
 
+  // Verification mode: in-browser simulation vs actual local command verification
+  const [verificationMode, setVerificationMode] = useState<'simulated' | 'local'>('simulated');
+
   // Load User Stats & Config
   const loadStatus = async () => {
     try {
@@ -151,7 +156,7 @@ function App() {
   const progressPercent = totalQuestsCount > 0 ? Math.round((completedCount / totalQuestsCount) * 100) : 0;
 
   // Verify Action
-  const handleVerify = async (quest: Quest) => {
+  const handleVerify = async (quest: Quest, options?: { isSimulated?: boolean }) => {
     if (!userData) return;
     setVerifying(true);
     setVerifyResult(null);
@@ -161,7 +166,8 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           validatorKey: quest.validatorKey,
-          difficulty: quest.difficulty
+          difficulty: quest.difficulty,
+          isSimulated: !!options?.isSimulated
         })
       });
       const result = await res.json();
@@ -750,99 +756,195 @@ function App() {
                         {activeQuest.objective}
                       </p>
 
-                      {/* OS INSTRUCTION TOGGLE TABS */}
+                      {/* VERIFICATION MODE TABS */}
                       <div style={{
                         display: 'flex',
-                        background: 'rgba(0, 0, 0, 0.2)',
+                        background: 'rgba(255, 255, 255, 0.02)',
                         padding: '4px',
-                        borderRadius: '8px',
+                        borderRadius: '10px',
                         border: '1px solid var(--border-light)',
-                        marginBottom: '20px'
+                        marginBottom: '24px'
                       }}>
                         <button
-                          onClick={() => setSelectedOS('Windows')}
+                          onClick={() => { setVerificationMode('simulated'); setVerifyResult(null); }}
                           style={{
                             flex: 1,
-                            background: selectedOS === 'Windows' ? 'var(--primary)' : 'transparent',
-                            color: selectedOS === 'Windows' ? 'white' : 'var(--text-secondary)',
+                            background: verificationMode === 'simulated' ? 'linear-gradient(135deg, var(--primary), var(--secondary))' : 'transparent',
+                            color: 'white',
                             border: 'none',
-                            padding: '8px 12px',
-                            borderRadius: '6px',
+                            padding: '10px 16px',
+                            borderRadius: '8px',
                             cursor: 'pointer',
-                            fontWeight: 600,
-                            fontSize: '12px',
+                            fontWeight: 700,
+                            fontSize: '13px',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            gap: '6px',
+                            gap: '8px',
                             transition: 'all var(--transition-fast)'
                           }}
                         >
-                          <Icons.WindowsLogo /> Windows PowerShell
+                          <Icons.Terminal /> In-Browser Simulator
                         </button>
                         <button
-                          onClick={() => setSelectedOS('Linux')}
+                          onClick={() => { setVerificationMode('local'); setVerifyResult(null); }}
                           style={{
                             flex: 1,
-                            background: selectedOS === 'Linux' ? 'var(--primary)' : 'transparent',
-                            color: selectedOS === 'Linux' ? 'white' : 'var(--text-secondary)',
+                            background: verificationMode === 'local' ? 'linear-gradient(135deg, var(--primary), var(--secondary))' : 'transparent',
+                            color: 'white',
                             border: 'none',
-                            padding: '8px 12px',
-                            borderRadius: '6px',
+                            padding: '10px 16px',
+                            borderRadius: '8px',
                             cursor: 'pointer',
-                            fontWeight: 600,
-                            fontSize: '12px',
+                            fontWeight: 700,
+                            fontSize: '13px',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            gap: '6px',
+                            gap: '8px',
                             transition: 'all var(--transition-fast)'
                           }}
                         >
-                          <Icons.LinuxLogo /> Linux Bash / Shell
+                          <Icons.Server /> Local OS Verification
                         </button>
                       </div>
 
-                      <h4 style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)' }}>
-                        Task Steps ({selectedOS} Instruction):
-                      </h4>
-                      
-                      <div className="step-list">
-                        {(selectedOS === 'Windows' ? activeQuest.stepsWindows : activeQuest.stepsLinux).map((step, idx) => (
-                          <div key={idx} className="step-item">
-                            <div className="step-num">{idx + 1}</div>
-                            <div className="step-text" style={{ fontSize: '13.5px' }}>{step}</div>
+                      {verificationMode === 'simulated' ? (
+                        <div>
+                          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+                            Type the required terminal commands in the interactive shell below to simulate the task and automatically verify your solution.
+                          </p>
+                          <TerminalSimulator
+                            questId={activeQuest.id}
+                            validatorKey={activeQuest.validatorKey}
+                            onSuccess={(isSimulated) => handleVerify(activeQuest, { isSimulated })}
+                          />
+                        </div>
+                      ) : (
+                        <div>
+                          {/* OS INSTRUCTION TOGGLE TABS */}
+                          <div style={{
+                            display: 'flex',
+                            background: 'rgba(0, 0, 0, 0.2)',
+                            padding: '4px',
+                            borderRadius: '8px',
+                            border: '1px solid var(--border-light)',
+                            marginBottom: '20px'
+                          }}>
+                            <button
+                              onClick={() => setSelectedOS('Windows')}
+                              style={{
+                                flex: 1,
+                                background: selectedOS === 'Windows' ? 'var(--primary)' : 'transparent',
+                                color: selectedOS === 'Windows' ? 'white' : 'var(--text-secondary)',
+                                border: 'none',
+                                padding: '8px 12px',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                fontWeight: 600,
+                                fontSize: '12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '6px',
+                                transition: 'all var(--transition-fast)'
+                              }}
+                            >
+                              <Icons.WindowsLogo /> Windows PowerShell
+                            </button>
+                            <button
+                              onClick={() => setSelectedOS('Linux')}
+                              style={{
+                                flex: 1,
+                                background: selectedOS === 'Linux' ? 'var(--primary)' : 'transparent',
+                                color: selectedOS === 'Linux' ? 'white' : 'var(--text-secondary)',
+                                border: 'none',
+                                padding: '8px 12px',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                fontWeight: 600,
+                                fontSize: '12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '6px',
+                                transition: 'all var(--transition-fast)'
+                              }}
+                            >
+                              <Icons.LinuxLogo /> Linux Bash / Shell
+                            </button>
                           </div>
-                        ))}
-                      </div>
 
-                      <h4 style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)' }}>
-                        Local Verification Script:
-                      </h4>
-                      <div className="terminal-block">
-                        <div className="terminal-header">Automated API Check</div>
-                        <span className="terminal-prompt">$ </span>
-                        <span>{activeQuest.verificationCommand}</span>
-                      </div>
+                          <h4 style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)' }}>
+                            Task Steps ({selectedOS} Instruction):
+                          </h4>
+                          
+                          <div className="step-list">
+                            {(selectedOS === 'Windows' ? activeQuest.stepsWindows : activeQuest.stepsLinux).map((step, idx) => (
+                              <div key={idx} className="step-item">
+                                <div className="step-num">{idx + 1}</div>
+                                <div className="step-text" style={{ fontSize: '13.5px' }}>{step}</div>
+                              </div>
+                            ))}
+                          </div>
 
-                      {activeQuest.hint && (
-                        <div style={{
-                          background: 'rgba(245, 158, 11, 0.05)',
-                          border: '1px solid rgba(245, 158, 11, 0.2)',
-                          padding: '12px',
-                          borderRadius: '8px',
-                          fontSize: '12px',
-                          color: '#fcd34d',
-                          marginBottom: '20px',
-                          display: 'flex',
-                          gap: '8px'
-                        }}>
-                          <Icons.Info />
-                          <div><strong>Hint:</strong> {activeQuest.hint}</div>
+                          <h4 style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)' }}>
+                            Local Verification Script:
+                          </h4>
+                          <div className="terminal-block">
+                            <div className="terminal-header">Automated API Check</div>
+                            <span className="terminal-prompt">$ </span>
+                            <span>{activeQuest.verificationCommand}</span>
+                          </div>
+
+                          {activeQuest.hint && (
+                            <div style={{
+                              background: 'rgba(245, 158, 11, 0.05)',
+                              border: '1px solid rgba(245, 158, 11, 0.2)',
+                              padding: '12px',
+                              borderRadius: '8px',
+                              fontSize: '12px',
+                              color: '#fcd34d',
+                              marginBottom: '20px',
+                              display: 'flex',
+                              gap: '8px'
+                            }}>
+                              <Icons.Info />
+                              <div><strong>Hint:</strong> {activeQuest.hint}</div>
+                            </div>
+                          )}
+
+                          {userData?.completedQuests.includes(activeQuest.validatorKey) ? (
+                            <div style={{
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: '8px', 
+                              color: 'var(--success)', 
+                              fontWeight: 700,
+                              justifyContent: 'center',
+                              padding: '14px',
+                              background: 'rgba(16, 185, 129, 0.1)',
+                              border: '1px solid rgba(16, 185, 129, 0.3)',
+                              borderRadius: '8px',
+                              marginBottom: '16px'
+                            }}>
+                              <Icons.Check /> QUEST COMPLETED & VERIFIED
+                            </div>
+                          ) : (
+                            <button 
+                              className="btn btn-primary pulse-glow" 
+                              onClick={() => handleVerify(activeQuest)}
+                              disabled={verifying}
+                              style={{ width: '100%', padding: '14px', marginBottom: '16px' }}
+                            >
+                              {verifying ? 'Running Verification Check...' : 'VERIFY QUEST'}
+                            </button>
+                          )}
                         </div>
                       )}
 
-                      {userData?.completedQuests.includes(activeQuest.validatorKey) ? (
+                      {/* Display "Verified" banner in Simulator mode as well if completed */}
+                      {verificationMode === 'simulated' && userData?.completedQuests.includes(activeQuest.validatorKey) && (
                         <div style={{
                           display: 'flex', 
                           alignItems: 'center', 
@@ -853,23 +955,15 @@ function App() {
                           padding: '14px',
                           background: 'rgba(16, 185, 129, 0.1)',
                           border: '1px solid rgba(16, 185, 129, 0.3)',
-                          borderRadius: '8px'
+                          borderRadius: '8px',
+                          marginTop: '20px'
                         }}>
                           <Icons.Check /> QUEST COMPLETED & VERIFIED
                         </div>
-                      ) : (
-                        <button 
-                          className="btn btn-primary pulse-glow" 
-                          onClick={() => handleVerify(activeQuest)}
-                          disabled={verifying}
-                          style={{ width: '100%', padding: '14px' }}
-                        >
-                          {verifying ? 'Running Verification Check...' : 'VERIFY QUEST'}
-                        </button>
                       )}
 
                       {verifyResult && (
-                        <div className={`verify-result ${verifyResult.success ? 'success' : 'error'}`}>
+                        <div className={`verify-result ${verifyResult.success ? 'success' : 'error'}`} style={{ marginTop: '16px' }}>
                           {verifyResult.success ? <Icons.Check /> : <Icons.Info />}
                           <div>
                             <strong>{verifyResult.success ? 'Verification Succeeded!' : 'Verification Failed'}</strong>

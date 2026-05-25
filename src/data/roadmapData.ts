@@ -97,6 +97,31 @@ export const roadmapModules: ModuleData[] = [
         verificationCommand: "Checks if the branch 'feature-devops' exists in 'devops-sandbox'.",
         validatorKey: "git_branch",
         hint: "Use 'git branch' to view all your local branches."
+      },
+      {
+        id: "git_reflog",
+        title: "Git Reflog Recovery",
+        difficulty: "Advanced",
+        objective: "Learn to recover a deleted commit or branch using git reflog. You will simulate committing a temporary file, deleting it via a hard reset, and then recovering it by finding its SHA in the reflog.",
+        stepsWindows: [
+          "Enter your git sandbox: 'cd devops-sandbox'",
+          "Create a temporary file: 'New-Item temp.txt -Value \"Oops, deleted!\"'",
+          "Stage and commit: 'git add temp.txt' and 'git commit -m \"Temp commit to delete\"'",
+          "Reset HEAD to discard it: 'git reset --hard HEAD~1'",
+          "Find your deleted commit's SHA using: 'git reflog'",
+          "Recover the deleted commit to a new branch: 'git branch recovery-branch <deleted-SHA>'"
+        ],
+        stepsLinux: [
+          "Enter your git sandbox: 'cd devops-sandbox'",
+          "Create a temporary file: 'echo \"Oops, deleted!\" > temp.txt'",
+          "Stage and commit: 'git add temp.txt' and 'git commit -m \"Temp commit to delete\"'",
+          "Reset HEAD to discard it: 'git reset --hard HEAD~1'",
+          "Find your deleted commit's SHA using: 'git reflog'",
+          "Recover the deleted commit to a new branch: 'git branch recovery-branch <deleted-SHA>'"
+        ],
+        verificationCommand: "Verifies if the branch 'recovery-branch' exists in 'devops-sandbox' and contains the restored commit.",
+        validatorKey: "git_reflog",
+        hint: "Run 'git reflog' to list all HEAD movements. Look for the commit message 'Temp commit to delete' and copy its 7-character hash."
       }
     ]
   },
@@ -164,6 +189,26 @@ export const roadmapModules: ModuleData[] = [
         verificationCommand: "Checks if 'backup_dest/README.md' and 'backup_dest/quest.txt' are successfully copied.",
         validatorKey: "bash_backup",
         hint: "Make sure you execute the script so it creates the target backup folder and copies the files."
+      },
+      {
+        id: "linux_permissions",
+        title: "File Permissions & Security",
+        difficulty: "Beginner",
+        objective: "Create a shell script (or powershell script on Windows) and configure its permissions to make it executable by the owner.",
+        stepsWindows: [
+          "Create a file named 'run_check.ps1' in 'devops-sandbox'.",
+          "Add code: 'New-Item run_check.ps1 -Value \"Write-Host \\'Checks Completed\\'\"'",
+          "Run script with bypass execution policy: 'powershell -ExecutionPolicy Bypass -File .\\run_check.ps1'"
+        ],
+        stepsLinux: [
+          "Create a file named 'run_check.sh' in 'devops-sandbox'.",
+          "Add code: 'echo -e \"#!/bin/bash\\necho \\'Checks Completed\\'\" > run_check.sh'",
+          "Grant executable permission to the script: 'chmod 755 run_check.sh'",
+          "Execute the script: './run_check.sh'"
+        ],
+        verificationCommand: "Checks if the file 'run_check.sh' (or 'run_check.ps1' on Windows) exists and is executable/has content.",
+        validatorKey: "linux_permissions",
+        hint: "On Linux, run 'chmod +x run_check.sh' or 'chmod 755 run_check.sh'. On Windows, verify you can run it via PowerShell script arguments."
       }
     ]
   },
@@ -280,6 +325,25 @@ export const roadmapModules: ModuleData[] = [
         verificationCommand: "Verifies if the docker-compose.yml file exists and if the containers are active.",
         validatorKey: "docker_compose",
         hint: "Ensure the compose configuration defines service web and cache, and run 'docker-compose up -d' inside the 'devops-sandbox' folder."
+      },
+      {
+        id: "docker_build",
+        title: "Build Custom Docker Image",
+        difficulty: "Intermediate",
+        objective: "Write a Dockerfile using alpine as a base, add a mock greeting file, and build it into a tagged image 'devops-mock-app:v1.0'.",
+        stepsWindows: [
+          "Create a file 'Dockerfile' in 'devops-sandbox'.",
+          "Add image instructions: 'New-Item Dockerfile -Value \"FROM alpine`nRUN echo \\'Hello DevOps!\\' > /hello.txt`nCMD cat /hello.txt\"'",
+          "Build image using Docker CLI: 'docker build -t devops-mock-app:v1.0 .'"
+        ],
+        stepsLinux: [
+          "Create a file 'Dockerfile' in 'devops-sandbox'.",
+          "Add image instructions: 'echo -e \"FROM alpine\\nRUN echo \\'Hello DevOps!\\' > /hello.txt\\nCMD cat /hello.txt\" > Dockerfile'",
+          "Build image using Docker CLI: 'sudo docker build -t devops-mock-app:v1.0 .'"
+        ],
+        verificationCommand: "Queries the local Docker engine to check if image 'devops-mock-app:v1.0' exists.",
+        validatorKey: "docker_build",
+        hint: "Make sure your Docker daemon is active. Run 'docker images' to list all local images and verify it was created."
       }
     ]
   },
@@ -329,6 +393,23 @@ export const roadmapModules: ModuleData[] = [
         verificationCommand: "Runs 'kubectl get pod k8s-nginx-pod' to verify its existence and running state.",
         validatorKey: "k8s_deploy",
         hint: "Check pod status using 'kubectl get pods'."
+      },
+      {
+        id: "k8s_service",
+        title: "Expose Pod with Kubernetes Service",
+        difficulty: "Intermediate",
+        objective: "Expose your running 'k8s-nginx-pod' to network traffic by creating a ClusterIP Service named 'k8s-nginx-service' on port 80.",
+        stepsWindows: [
+          "Create a Kubernetes service pointing to your Nginx pod: 'kubectl expose pod k8s-nginx-pod --name=k8s-nginx-service --port=80 --target-port=80 --type=ClusterIP'",
+          "Verify the service details: 'kubectl get service k8s-nginx-service'"
+        ],
+        stepsLinux: [
+          "Create a Kubernetes service pointing to your Nginx pod: 'kubectl expose pod k8s-nginx-pod --name=k8s-nginx-service --port=80 --target-port=80 --type=ClusterIP'",
+          "Verify the service details: 'kubectl get service k8s-nginx-service'"
+        ],
+        verificationCommand: "Checks if the service 'k8s-nginx-service' exists in your cluster and exposes port 80.",
+        validatorKey: "k8s_service",
+        hint: "Use 'kubectl get service' to verify it is registered and matches the type ClusterIP."
       }
     ]
   },

@@ -309,5 +309,74 @@ export const validators = {
     } catch (e) {
       return { success: false, message: "Failed to parse backlog.json. Ensure it's valid JSON: " + e.message };
     }
+  },
+
+  // 13. New Quests
+  git_reflog: async () => {
+    const gitDir = path.join(SANDBOX_DIR, '.git');
+    if (!fs.existsSync(gitDir)) {
+      return { success: false, message: "Git repository not initialized in devops-sandbox." };
+    }
+    const branchCheck = await runCmdSandbox('git branch --list recovery-branch');
+    if (!branchCheck.stdout.includes('recovery-branch')) {
+      return { success: false, message: "Branch 'recovery-branch' was not found. Use 'git branch recovery-branch <SHA>' to recover it." };
+    }
+    return { success: true, message: "Git reflog recovery verified: 'recovery-branch' branch was successfully created and restored!" };
+  },
+
+  linux_permissions: async () => {
+    const isWin = process.platform === 'win32';
+    if (isWin) {
+      const psFile = path.join(SANDBOX_DIR, 'run_check.ps1');
+      if (!fs.existsSync(psFile)) {
+        return { success: false, message: "Powershell script 'run_check.ps1' was not found in devops-sandbox." };
+      }
+      return { success: true, message: "Powershell script 'run_check.ps1' detected on Windows system." };
+    } else {
+      const shFile = path.join(SANDBOX_DIR, 'run_check.sh');
+      if (!fs.existsSync(shFile)) {
+        return { success: false, message: "Shell script 'run_check.sh' was not found in devops-sandbox." };
+      }
+      try {
+        const stats = fs.statSync(shFile);
+        const isExecutable = !!(stats.mode & 0o111);
+        if (!isExecutable) {
+          return { success: false, message: "File 'run_check.sh' exists but is not executable. Run 'chmod +x run_check.sh'." };
+        }
+        return { success: true, message: "Shell script 'run_check.sh' is present and executable!" };
+      } catch (e) {
+        return { success: false, message: "Error reading file permissions: " + e.message };
+      }
+    }
+  },
+
+  docker_build: async () => {
+    const dockerfile = path.join(SANDBOX_DIR, 'Dockerfile');
+    if (!fs.existsSync(dockerfile)) {
+      return { success: false, message: "Dockerfile was not found in devops-sandbox directory." };
+    }
+    const result = await runCmd('docker image inspect devops-mock-app:v1.0');
+    if (!result.success) {
+      return { success: false, message: "Docker image 'devops-mock-app:v1.0' not found. Have you built the image using 'docker build -t devops-mock-app:v1.0 .'?" };
+    }
+    return { success: true, message: "Docker image 'devops-mock-app:v1.0' built and verified successfully!" };
+  },
+
+  k8s_service: async () => {
+    const result = await runCmd('kubectl get service k8s-nginx-service -o json');
+    if (!result.success) {
+      return { success: false, message: "Kubernetes service 'k8s-nginx-service' was not found. Expose your pod: 'kubectl expose pod k8s-nginx-pod --name=k8s-nginx-service ...'" };
+    }
+    try {
+      const service = JSON.parse(result.stdout);
+      const port = service.spec?.ports?.[0]?.port;
+      if (port !== 80) {
+        return { success: false, message: `Service port is ${port} instead of 80.` };
+      }
+      return { success: true, message: "Kubernetes service 'k8s-nginx-service' verified and exposing port 80!" };
+    } catch (e) {
+      return { success: false, message: "Failed to parse service details: " + e.message };
+    }
   }
 };
+
