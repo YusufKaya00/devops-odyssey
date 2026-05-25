@@ -34,7 +34,10 @@ interface SimState {
 
 const INITIAL_STATE: SimState = {
   fs: {
-    'README.md': '# DevOps Sandbox\nUse this directory to perform your quest tasks, run commands, and practice configurations.\n'
+    'README.md': '# DevOps Sandbox\nUse this directory to perform your quest tasks, run commands, and practice configurations.\n',
+    'targets.txt': 'app1:3000 healthy\napp2:3000 unhealthy',
+    '/etc/nginx/sites-available/default': 'server {\n    listen 80;\n    location / {\n        proxy_pass http://127.0.0.1:3999; # app runs on 3000!\n    }\n}',
+    '/var/log/nginx/access.log': '127.0.0.1 - - [25/May/2026:12:00:01] "GET / HTTP/1.1" 200 612\n127.0.0.1 - - [25/May/2026:12:00:05] "POST /api HTTP/1.1" 500 24\n127.0.0.1 - - [25/May/2026:12:00:10] "GET /static/logo.png HTTP/1.1" 304 0'
   },
   permissions: {},
   currentDir: 'devops-sandbox',
@@ -520,6 +523,57 @@ export const TerminalSimulator: React.FC<TerminalSimulatorProps> = ({
         }
       } else {
         printErr(`grep: ${file}: No such file or directory`);
+      }
+      return;
+    }
+
+    if (cmd === 'nginx') {
+      const isTest = args.includes('-t');
+      if (isTest) {
+        const cIndex = args.indexOf('-c');
+        const confFile = cIndex !== -1 ? args[cIndex + 1] : '/etc/nginx/nginx.conf';
+        printOut(`nginx: the configuration file ${confFile} syntax is ok\nnginx: configuration file ${confFile} test is successful`);
+      } else {
+        printOut('nginx: daemon running in background.');
+      }
+      return;
+    }
+
+    if (cmd === 'systemctl') {
+      const sub = args[1]?.toLowerCase();
+      const service = args[2]?.toLowerCase();
+      if (sub === 'reload' && service === 'nginx') {
+        printOut('Nginx service configuration reloaded successfully (graceful transition).');
+      } else if (sub === 'status' && service === 'nginx') {
+        printOut('● nginx.service - A high performance web server\n   Active: active (running) since Mon 2026-05-25 10:00:00 UTC\n   Process: 1042 ExecReload=/usr/sbin/nginx -g daemon on; master_process on; -s reload (code=exited, status=0/SUCCESS)');
+      } else if (sub === 'restart' && service === 'nginx') {
+        printOut('Nginx service restarted successfully.');
+      } else {
+        printOut(`systemctl: service "${service}" action "${sub}" succeeded.`);
+      }
+      return;
+    }
+
+    if (cmd === 'certbot') {
+      if (args.includes('renew')) {
+        printOut('Processing /etc/letsencrypt/renewal/api.internal.conf\nSimulating renewal of an existing cert...\nCongratulations, all simulated renewals succeeded!');
+      } else {
+        printOut('Certbot utility. Use "certbot renew --dry-run" to test SSL/TLS renewal.');
+      }
+      return;
+    }
+
+    if (cmd === 'tail') {
+      const nIndex = args.indexOf('-n');
+      const linesToRead = nIndex !== -1 ? parseInt(args[nIndex + 1], 10) : 10;
+      const file = args[args.length - 1];
+      const fileContent = simState.fs[file];
+      if (fileContent !== undefined) {
+        const lines = fileContent.split('\n');
+        const sliced = lines.slice(-linesToRead);
+        printOut(sliced.join('\n'));
+      } else {
+        printErr(`tail: cannot open '${file}': No such file or directory`);
       }
       return;
     }
