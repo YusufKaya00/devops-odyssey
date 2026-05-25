@@ -114,4 +114,34 @@ if (linuxQuestionCount < 8) {
   process.exit(1);
 }
 
+const networkingSource = fs.readFileSync(path.join(root, 'src/data/training/networking.ts'), 'utf8');
+const networkingQuestIds = [
+  'net_osi_diagnostic_map',
+  'net_dns_lookup',
+  'net_http_headers',
+  'net_tls_certificate',
+  'net_ports_sockets',
+  'net_firewall_rules',
+  'net_cidr_subnets',
+  'net_lb_health_checks',
+  'net_dns_https_failure',
+  'net_exposure_baseline',
+  'net_service_path_capstone'
+];
+
+const missingNetworkingQuests = networkingQuestIds.filter(id => !networkingSource.includes(id));
+if (missingNetworkingQuests.length > 0) {
+  console.error('Missing networking quests:');
+  for (const id of missingNetworkingQuests) {
+    console.error(`- ${id}`);
+  }
+  process.exit(1);
+}
+
+const networkingQuestionCount = (networkingSource.match(/question:/g) || []).length;
+if (networkingQuestionCount < 8) {
+  console.error(`Networking module needs at least 8 quiz questions, found ${networkingQuestionCount}.`);
+  process.exit(1);
+}
+
 console.log('Training data scaffolding validation passed.');
