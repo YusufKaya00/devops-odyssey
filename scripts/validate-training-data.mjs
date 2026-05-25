@@ -83,4 +83,35 @@ if (programmingQuestionCount < 8) {
   process.exit(1);
 }
 
+const linuxSource = fs.readFileSync(path.join(root, 'src/data/training/linux.ts'), 'utf8');
+const linuxQuestIds = [
+  'linux_paths_filesystem',
+  'linux_permissions_deep',
+  'linux_process_triage',
+  'linux_disk_memory',
+  'linux_text_pipeline',
+  'linux_bash_strict_mode',
+  'linux_cron_logs',
+  'linux_systemd_unit',
+  'linux_ssh_keys',
+  'linux_backup_restore',
+  'linux_failure_modes',
+  'linux_service_capstone'
+];
+
+const missingLinuxQuests = linuxQuestIds.filter(id => !linuxSource.includes(id));
+if (missingLinuxQuests.length > 0) {
+  console.error('Missing Linux quests:');
+  for (const id of missingLinuxQuests) {
+    console.error(`- ${id}`);
+  }
+  process.exit(1);
+}
+
+const linuxQuestionCount = (linuxSource.match(/question:/g) || []).length;
+if (linuxQuestionCount < 8) {
+  console.error(`Linux module needs at least 8 quiz questions, found ${linuxQuestionCount}.`);
+  process.exit(1);
+}
+
 console.log('Training data scaffolding validation passed.');

@@ -1,4 +1,5 @@
 import type { ModuleData, ModuleQuizQuestion, Quest } from './roadmapData';
+import { linuxModule } from './training/linux';
 import { programmingModule } from './training/programming';
 
 type QuestSeed = {
@@ -60,29 +61,8 @@ const additions: Record<number, { quests: Quest[]; quiz: ModuleQuizQuestion[] }>
     quiz: programmingModule.quiz
   },
   3: {
-    quests: [
-      makeQuest({
-        id: "linux_process_audit",
-        title: "Audit Processes and Disk Usage",
-        difficulty: "Beginner",
-        objective: "Practice the inspection commands used during server triage.",
-        commands: [
-          { title: "List Processes", explanation: "Process inspection helps identify runaway jobs, failed daemons, and resource pressure.", command: "ps aux", output: "USER PID %CPU COMMAND\nroot 1 0.0 init\nstudent 42 1.2 node server.js" },
-          { title: "Inspect Disk Usage", explanation: "Disk pressure is a common outage cause. df gives filesystem capacity and usage.", command: "df -h", output: "Filesystem Size Used Avail Use%\n/dev/sda1 40G 18G 22G 45%" }
-        ]
-      }),
-      makeQuest({
-        id: "linux_text_pipeline",
-        title: "Build a Grep/Awk Text Pipeline",
-        difficulty: "Intermediate",
-        objective: "Extract useful lines from operational text.",
-        commands: [
-          { title: "Create Access Log", explanation: "Logs are raw operational evidence. Shell pipelines let you reduce them quickly.", command: "echo \"GET / 200\nGET /admin 403\nPOST /deploy 500\" > access.log", output: "Wrote access.log." },
-          { title: "Find Failing Requests", explanation: "grep is a first-line incident response tool for finding patterns in logs.", command: "grep 500 access.log", output: "POST /deploy 500" }
-        ]
-      })
-    ],
-    quiz: moduleQuiz("Linux and scripting")
+    quests: linuxModule.quests,
+    quiz: linuxModule.quiz
   },
   4: {
     quests: [
