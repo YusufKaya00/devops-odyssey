@@ -1,4 +1,5 @@
 import type { ModuleData, ModuleQuizQuestion, Quest } from './roadmapData';
+import { programmingModule } from './training/programming';
 
 type QuestSeed = {
   id: string;
@@ -55,55 +56,8 @@ const moduleQuiz = (topic: string): ModuleQuizQuestion[] => [
 
 const additions: Record<number, { quests: Quest[]; quiz: ModuleQuizQuestion[] }> = {
   2: {
-    quests: [
-      makeQuest({
-        id: "py_log_parser",
-        title: "Parse Deployment Logs with Python",
-        difficulty: "Beginner",
-        objective: "Create a small parser that counts failed health checks from a log file.",
-        commands: [
-          {
-            title: "Create a Mock Log",
-            explanation: "Automation scripts often start by turning messy operational text into structured facts.",
-            command: "echo \"200 OK\n500 ERROR\n200 OK\" > deploy.log",
-            output: "Wrote deploy.log with three events."
-          },
-          {
-            title: "Write the Parser",
-            explanation: "This one-liner models the core Python skill: read input, transform it, and print a useful signal for automation.",
-            command: "echo \"print(open('deploy.log').read().count('500'))\" > parse_logs.py",
-            output: "Wrote parse_logs.py."
-          },
-          {
-            title: "Run the Parser",
-            explanation: "A DevOps script should produce a clear result that can later become a pipeline gate or alert condition.",
-            command: "python parse_logs.py",
-            output: "1"
-          }
-        ]
-      }),
-      makeQuest({
-        id: "py_json_report",
-        title: "Generate a JSON Health Report",
-        difficulty: "Intermediate",
-        objective: "Model structured output that another automation tool can consume.",
-        commands: [
-          {
-            title: "Create JSON Producer",
-            explanation: "Structured JSON output is easier to pass between scripts, CI jobs, and monitoring checks than free-form text.",
-            command: "echo \"import json; print(json.dumps({'service':'api','status':'ok'}))\" > health_report.py",
-            output: "Wrote health_report.py."
-          },
-          {
-            title: "Execute the Report",
-            explanation: "The script prints machine-readable status instead of prose.",
-            command: "python health_report.py",
-            output: "{\"service\":\"api\",\"status\":\"ok\"}"
-          }
-        ]
-      })
-    ],
-    quiz: moduleQuiz("programming")
+    quests: programmingModule.quests,
+    quiz: programmingModule.quiz
   },
   3: {
     quests: [

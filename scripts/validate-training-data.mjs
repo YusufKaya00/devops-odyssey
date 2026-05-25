@@ -54,4 +54,33 @@ for (const helper of ['createQuest', 'createConceptQuiz']) {
   }
 }
 
+const programmingSource = fs.readFileSync(path.join(root, 'src/data/training/programming.ts'), 'utf8');
+const programmingQuestIds = [
+  'prog_cli_exit_codes',
+  'prog_log_parser',
+  'prog_json_health_report',
+  'prog_yaml_validator',
+  'prog_http_retry_checker',
+  'prog_config_drift',
+  'prog_concurrent_checker',
+  'prog_deploy_report',
+  'prog_script_unit_tests',
+  'prog_incident_triage_capstone'
+];
+
+const missingProgrammingQuests = programmingQuestIds.filter(id => !programmingSource.includes(id));
+if (missingProgrammingQuests.length > 0) {
+  console.error('Missing programming quests:');
+  for (const id of missingProgrammingQuests) {
+    console.error(`- ${id}`);
+  }
+  process.exit(1);
+}
+
+const programmingQuestionCount = (programmingSource.match(/question:/g) || []).length;
+if (programmingQuestionCount < 8) {
+  console.error(`Programming module needs at least 8 quiz questions, found ${programmingQuestionCount}.`);
+  process.exit(1);
+}
+
 console.log('Training data scaffolding validation passed.');
