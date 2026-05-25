@@ -144,4 +144,34 @@ if (networkingQuestionCount < 8) {
   process.exit(1);
 }
 
+const serverManagementSource = fs.readFileSync(path.join(root, 'src/data/training/serverManagement.ts'), 'utf8');
+const serverManagementQuestIds = [
+  'server_nginx_static',
+  'server_reverse_proxy',
+  'server_upstream_lb',
+  'server_cache_compression',
+  'server_log_reading',
+  'server_reload_restart',
+  'server_blue_green',
+  'server_rate_limit_hardening',
+  'server_cert_renewal',
+  'server_proxy_capstone'
+];
+
+const missingServerManagementQuests = serverManagementQuestIds.filter(id => !serverManagementSource.includes(id));
+if (missingServerManagementQuests.length > 0) {
+  console.error('Missing server management quests:');
+  for (const id of missingServerManagementQuests) {
+    console.error(`- ${id}`);
+  }
+  process.exit(1);
+}
+
+const serverManagementQuestionCount = (serverManagementSource.match(/question:/g) || []).length;
+if (serverManagementQuestionCount < 8) {
+  console.error(`Server Management module needs at least 8 quiz questions, found ${serverManagementQuestionCount}.`);
+  process.exit(1);
+}
+
 console.log('Training data scaffolding validation passed.');
+
