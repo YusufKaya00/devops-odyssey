@@ -1,6 +1,7 @@
 import type { ModuleData, ModuleQuizQuestion, Quest } from './roadmapData';
 import { linuxModule } from './training/linux';
 import { programmingModule } from './training/programming';
+import { networkingModule } from './training/networking';
 
 type QuestSeed = {
   id: string;
@@ -65,29 +66,8 @@ const additions: Record<number, { quests: Quest[]; quiz: ModuleQuizQuestion[] }>
     quiz: linuxModule.quiz
   },
   4: {
-    quests: [
-      makeQuest({
-        id: "dns_http_trace",
-        title: "Trace DNS and HTTP Connectivity",
-        difficulty: "Beginner",
-        objective: "Practice resolving a hostname and checking an HTTP endpoint.",
-        commands: [
-          { title: "Resolve a Hostname", explanation: "DNS translates names into IP addresses. Many incidents start as DNS failures.", command: "nslookup example.com", output: "Name: example.com\nAddress: 93.184.216.34" },
-          { title: "Check HTTP Headers", explanation: "Headers reveal server behavior, caching, redirects, and status codes.", command: "curl -I https://example.com", output: "HTTP/2 200\ncontent-type: text/html" }
-        ]
-      }),
-      makeQuest({
-        id: "firewall_rule_mock",
-        title: "Model a Firewall Allow Rule",
-        difficulty: "Intermediate",
-        objective: "Create a mock rule documenting allowed service traffic.",
-        commands: [
-          { title: "Write Firewall Rule", explanation: "Firewall changes should be explicit: source, destination, port, and protocol.", command: "echo \"allow tcp 10.0.0.0/24 -> 10.0.1.10:443\" > firewall.rules", output: "Wrote firewall.rules." },
-          { title: "Review the Rule", explanation: "A human-readable review catches accidental broad access before production.", command: "cat firewall.rules", output: "allow tcp 10.0.0.0/24 -> 10.0.1.10:443" }
-        ]
-      })
-    ],
-    quiz: moduleQuiz("networking and security")
+    quests: networkingModule.quests,
+    quiz: networkingModule.quiz
   },
   5: {
     quests: [

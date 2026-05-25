@@ -305,23 +305,51 @@ export const TerminalSimulator: React.FC<TerminalSimulatorProps> = ({
       const action = args[1]?.toLowerCase();
       if (action === 'run') {
         const name = args[2];
+        const imgArg = args.find(a => a.startsWith('--image='));
+        const image = imgArg ? imgArg.split('=')[1] : 'nginx';
         setSimState(prev => ({
           ...prev,
           k8s: {
             ...prev.k8s,
-            pods: [...prev.k8s.pods, { name, image: 'nginx', status: 'Running', age: '1s' }]
+            pods: [...prev.k8s.pods, { name, image, status: 'Running', age: '1s' }]
+          }
+        }));
+      } else if (action === 'create' && args[2]?.toLowerCase() === 'deployment') {
+        const name = args[3];
+        const imgArg = args.find(a => a.startsWith('--image='));
+        const image = imgArg ? imgArg.split('=')[1] : 'nginx';
+        const repArg = args.find(a => a.startsWith('--replicas='));
+        const replicas = repArg ? parseInt(repArg.split('=')[1], 10) : 1;
+        setSimState(prev => ({
+          ...prev,
+          k8s: {
+            ...prev.k8s,
+            pods: [
+              ...prev.k8s.pods,
+              ...Array.from({ length: replicas }).map(() => ({
+                name: `${name}-${genSHA()}`,
+                image,
+                status: 'Running',
+                age: '1s'
+              }))
+            ]
           }
         }));
       } else if (action === 'expose') {
+        const deployName = args[2];
+        const typeArg = args.find(a => a.startsWith('--type='));
+        const type = typeArg ? typeArg.split('=')[1] : 'ClusterIP';
+        const portArg = args.find(a => a.startsWith('--port='));
+        const port = portArg ? portArg.split('=')[1] : '80';
         setSimState(prev => ({
           ...prev,
           k8s: {
             ...prev.k8s,
             services: [...prev.k8s.services, {
-              name: 'k8s-nginx-service',
-              type: 'ClusterIP',
-              clusterIp: '10.96.12.45',
-              ports: '80/TCP',
+              name: deployName,
+              type,
+              clusterIp: '10.96.14.88',
+              ports: `${port}:${type === 'NodePort' ? '31245' : port}/TCP`,
               age: '1s'
             }]
           }
