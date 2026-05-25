@@ -360,5 +360,35 @@ if (cloudQuestionCount < 8) {
   process.exit(1);
 }
 
+const softwarePracticesSource = fs.readFileSync(path.join(root, 'src/data/training/softwarePractices.ts'), 'utf8');
+const softwarePracticesQuestIds = [
+  'sw_sdlc_release_flow',
+  'sw_scrum_backlog',
+  'sw_acceptance_criteria',
+  'sw_branching_pr_review',
+  'sw_test_strategy',
+  'sw_release_checklist',
+  'sw_change_risk_score',
+  'sw_incident_postmortem',
+  'sw_dora_metrics',
+  'sw_team_topology_handoff',
+  'sw_capstone_change_lifecycle'
+];
+
+const missingSoftwarePracticesQuests = softwarePracticesQuestIds.filter(id => !softwarePracticesSource.includes(id));
+if (missingSoftwarePracticesQuests.length > 0) {
+  console.error('Missing Software Practices quests:');
+  for (const id of missingSoftwarePracticesQuests) {
+    console.error(`- ${id}`);
+  }
+  process.exit(1);
+}
+
+const softwarePracticesQuestionCount = (softwarePracticesSource.match(/question:/g) || []).length;
+if (softwarePracticesQuestionCount < 8) {
+  console.error(`Software Practices module needs at least 8 quiz questions, found ${softwarePracticesQuestionCount}.`);
+  process.exit(1);
+}
+
 console.log('Training data scaffolding validation passed.');
 
