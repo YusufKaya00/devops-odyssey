@@ -299,5 +299,35 @@ if (cicdQuestionCount < 8) {
   process.exit(1);
 }
 
+const observabilitySource = fs.readFileSync(path.join(root, 'src/data/training/observability.ts'), 'utf8');
+const observabilityQuestIds = [
+  'obs_signals_metrics_logs_traces',
+  'obs_prometheus_scrape',
+  'obs_promql_queries',
+  'obs_alert_rule',
+  'obs_grafana_dashboard',
+  'obs_log_correlation',
+  'obs_slo_error_budget',
+  'obs_alert_routing',
+  'obs_runbook',
+  'obs_dashboard_improvement',
+  'obs_capstone_error_investigation'
+];
+
+const missingObservabilityQuests = observabilityQuestIds.filter(id => !observabilitySource.includes(id));
+if (missingObservabilityQuests.length > 0) {
+  console.error('Missing Observability quests:');
+  for (const id of missingObservabilityQuests) {
+    console.error(`- ${id}`);
+  }
+  process.exit(1);
+}
+
+const observabilityQuestionCount = (observabilitySource.match(/question:/g) || []).length;
+if (observabilityQuestionCount < 8) {
+  console.error(`Observability module needs at least 8 quiz questions, found ${observabilityQuestionCount}.`);
+  process.exit(1);
+}
+
 console.log('Training data scaffolding validation passed.');
 
