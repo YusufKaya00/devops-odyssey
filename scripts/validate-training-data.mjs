@@ -237,5 +237,36 @@ if (kubernetesQuestionCount < 8) {
   process.exit(1);
 }
 
+const iacSource = fs.readFileSync(path.join(root, 'src/data/training/iac.ts'), 'utf8');
+const iacQuestIds = [
+  'iac_tf_lifecycle',
+  'iac_tf_variables_outputs',
+  'iac_tf_state_drift',
+  'iac_tf_providers_resources',
+  'iac_tf_modules',
+  'iac_tf_remote_backend',
+  'iac_tf_import',
+  'iac_tf_plan_review',
+  'iac_ansible_inventory',
+  'iac_ansible_idempotency',
+  'iac_secret_handling',
+  'iac_capstone_drift_fix'
+];
+
+const missingIacQuests = iacQuestIds.filter(id => !iacSource.includes(id));
+if (missingIacQuests.length > 0) {
+  console.error('Missing IaC quests:');
+  for (const id of missingIacQuests) {
+    console.error(`- ${id}`);
+  }
+  process.exit(1);
+}
+
+const iacQuestionCount = (iacSource.match(/question:/g) || []).length;
+if (iacQuestionCount < 8) {
+  console.error(`IaC module needs at least 8 quiz questions, found ${iacQuestionCount}.`);
+  process.exit(1);
+}
+
 console.log('Training data scaffolding validation passed.');
 
