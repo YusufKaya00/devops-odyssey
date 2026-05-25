@@ -2,6 +2,7 @@ import type { ModuleData, ModuleQuizQuestion, Quest } from './roadmapData';
 import { linuxModule } from './training/linux';
 import { programmingModule } from './training/programming';
 import { networkingModule } from './training/networking';
+import { serverManagementModule } from './training/serverManagement';
 
 type QuestSeed = {
   id: string;
@@ -70,29 +71,8 @@ const additions: Record<number, { quests: Quest[]; quiz: ModuleQuizQuestion[] }>
     quiz: networkingModule.quiz
   },
   5: {
-    quests: [
-      makeQuest({
-        id: "nginx_load_balancer",
-        title: "Configure an Nginx Upstream",
-        difficulty: "Intermediate",
-        objective: "Model a reverse proxy with two backend services.",
-        commands: [
-          { title: "Write Upstream Config", explanation: "Upstreams let Nginx distribute traffic across backend instances.", command: "echo \"upstream app { server app1:3000; server app2:3000; }\" > upstream.conf", output: "Wrote upstream.conf." },
-          { title: "Inspect Config", explanation: "Reviewing config before reload prevents avoidable downtime.", command: "cat upstream.conf", output: "upstream app { server app1:3000; server app2:3000; }" }
-        ]
-      }),
-      makeQuest({
-        id: "server_log_rotation",
-        title: "Design Log Rotation Policy",
-        difficulty: "Beginner",
-        objective: "Create a basic policy that prevents logs from filling disks.",
-        commands: [
-          { title: "Write Rotation Policy", explanation: "Unbounded logs can fill a server. Rotation policies keep retention predictable.", command: "echo \"rotate daily keep 14 compress\" > logrotate.policy", output: "Wrote logrotate.policy." },
-          { title: "Review Policy", explanation: "Compression and retention are operational tradeoffs between cost and forensic depth.", command: "cat logrotate.policy", output: "rotate daily keep 14 compress" }
-        ]
-      })
-    ],
-    quiz: moduleQuiz("server management")
+    quests: serverManagementModule.quests,
+    quiz: serverManagementModule.quiz
   },
   6: {
     quests: [
