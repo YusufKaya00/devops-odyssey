@@ -329,5 +329,36 @@ if (observabilityQuestionCount < 8) {
   process.exit(1);
 }
 
+const cloudSource = fs.readFileSync(path.join(root, 'src/data/training/cloud.ts'), 'utf8');
+const cloudQuestIds = [
+  'cloud_cli_identity_region',
+  'cloud_iam_least_privilege',
+  'cloud_object_lifecycle',
+  'cloud_vpc_subnet_sg',
+  'cloud_vm_launch_config',
+  'cloud_lb_target_group',
+  'cloud_db_backup_policy',
+  'cloud_serverless_function',
+  'cloud_logs_metrics',
+  'cloud_cost_tags_budget',
+  'cloud_well_architected',
+  'cloud_capstone_service_environment'
+];
+
+const missingCloudQuests = cloudQuestIds.filter(id => !cloudSource.includes(id));
+if (missingCloudQuests.length > 0) {
+  console.error('Missing Cloud quests:');
+  for (const id of missingCloudQuests) {
+    console.error(`- ${id}`);
+  }
+  process.exit(1);
+}
+
+const cloudQuestionCount = (cloudSource.match(/question:/g) || []).length;
+if (cloudQuestionCount < 8) {
+  console.error(`Cloud module needs at least 8 quiz questions, found ${cloudQuestionCount}.`);
+  process.exit(1);
+}
+
 console.log('Training data scaffolding validation passed.');
 
