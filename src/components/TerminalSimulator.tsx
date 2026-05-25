@@ -757,6 +757,58 @@ export const TerminalSimulator: React.FC<TerminalSimulatorProps> = ({
       return;
     }
 
+    if (cmd === 'terraform') {
+      const sub = args[1]?.toLowerCase();
+      if (sub === 'init') {
+        printOut('Initializing the backend...\nInitializing provider plugins...\n- Finding latest version of hashicorp/local...\n- Installing hashicorp/local v2.5.1...\nTerraform has been successfully initialized!');
+      } else if (sub === 'fmt') {
+        printOut('Reformatted main.tf');
+      } else if (sub === 'validate') {
+        printOut('Success! The configuration is valid.');
+      } else if (sub === 'plan') {
+        printOut('Terraform will perform the following actions:\n  # local_file.quest will be created\n  + resource "local_file" "quest" {\n      + content  = "Terraform was here!"\n      + filename = "./tf_quest.txt"\n    }\nPlan: 1 to add, 0 to change, 0 to destroy.');
+      } else if (sub === 'apply') {
+        printOut('local_file.quest: Creating...\nlocal_file.quest: Creation complete after 0s\nApply complete! Resources: 1 added, 0 changed, 0 destroyed.');
+      } else if (sub === 'state') {
+        const stateSub = args[2]?.toLowerCase();
+        if (stateSub === 'list') {
+          printOut('local_file.quest');
+        } else {
+          printOut('local_file.quest');
+        }
+      } else if (sub === 'import') {
+        printOut('Import successful!\nResources imported: 1');
+      } else {
+        printOut(`terraform command "${sub}" completed.`);
+      }
+      return;
+    }
+
+    if (cmd === 'ansible-inventory') {
+      printOut('[web]\nweb1 ansible_host=10.0.1.10');
+      return;
+    }
+
+    if (cmd === 'ansible-playbook') {
+      printOut('PLAY [web] *********************************************************************\n\nTASK [Gathering Facts] *********************************************************\nok: [web1]\n\nTASK [debug] *******************************************************************\nok: [web1] => {\n    "msg": "hello"\n}\n\nPLAY RECAP *********************************************************************\nweb1                       : ok=2    changed=0    unreachable=0    failed=0');
+      return;
+    }
+
+    if (cmd === 'helm') {
+      const sub = args[1]?.toLowerCase();
+      const release = args[2];
+      if (sub === 'install') {
+        printOut(`NAME: ${release}\nLAST DEPLOYED: Mon May 25 14:00:00 2026\nNAMESPACE: default\nSTATUS: deployed\nREVISION: 1`);
+      } else if (sub === 'upgrade') {
+        printOut(`NAME: ${release}\nLAST DEPLOYED: Mon May 25 14:01:00 2026\nNAMESPACE: default\nSTATUS: deployed\nREVISION: 2`);
+      } else if (sub === 'rollback') {
+        printOut(`Rollback release ${release} to revision ${args[3] || '1'} completed.`);
+      } else {
+        printOut(`Helm release "${release}" command "${sub}" completed.`);
+      }
+      return;
+    }
+
     // Default error
     printErr(`command not found or incorrect for this step: ${cmd}. Expected: "${interactiveSteps[activeStepIdx]?.expectedCommand || ''}"`);
   };

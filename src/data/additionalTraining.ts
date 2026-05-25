@@ -5,6 +5,7 @@ import { networkingModule } from './training/networking';
 import { serverManagementModule } from './training/serverManagement';
 import { containersModule } from './training/containers';
 import { kubernetesModule } from './training/kubernetes';
+import { iacModule } from './training/iac';
 
 type QuestSeed = {
   id: string;
@@ -85,29 +86,8 @@ const additions: Record<number, { quests: Quest[]; quiz: ModuleQuizQuestion[] }>
     quiz: kubernetesModule.quiz
   },
   8: {
-    quests: [
-      makeQuest({
-        id: "tf_plan_variables",
-        title: "Terraform Variables and Plan Review",
-        difficulty: "Intermediate",
-        objective: "Model variables and review an execution plan before apply.",
-        commands: [
-          { title: "Create Variable File", explanation: "Variables make Terraform modules reusable across environments.", command: "echo \"variable \\\"env\\\" { default = \\\"dev\\\" }\" > variables.tf", output: "Wrote variables.tf." },
-          { title: "Review Plan", explanation: "terraform plan is the safety review before changing infrastructure state.", command: "terraform plan", output: "Plan: 1 to add, 0 to change, 0 to destroy." }
-        ]
-      }),
-      makeQuest({
-        id: "ansible_inventory",
-        title: "Ansible Inventory and Playbook",
-        difficulty: "Beginner",
-        objective: "Create an inventory and a tiny playbook skeleton.",
-        commands: [
-          { title: "Create Inventory", explanation: "Ansible inventories define which hosts automation targets.", command: "echo \"[web]\nweb1 ansible_host=10.0.1.10\" > inventory.ini", output: "Wrote inventory.ini." },
-          { title: "Create Playbook", explanation: "Playbooks describe desired configuration tasks in YAML.", command: "echo \"- hosts: web\n  tasks:\n    - debug: msg=hello\" > playbook.yml", output: "Wrote playbook.yml." }
-        ]
-      })
-    ],
-    quiz: moduleQuiz("infrastructure as code")
+    quests: iacModule.quests,
+    quiz: iacModule.quiz
   },
   9: {
     quests: [
