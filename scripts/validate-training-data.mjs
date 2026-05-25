@@ -204,5 +204,38 @@ if (containersQuestionCount < 8) {
   process.exit(1);
 }
 
+const kubernetesSource = fs.readFileSync(path.join(root, 'src/data/training/kubernetes.ts'), 'utf8');
+const kubernetesQuestIds = [
+  'k8s_kubeconfig_cluster',
+  'k8s_pods_describe_logs',
+  'k8s_deployments_replicasets',
+  'k8s_rollout_undo',
+  'k8s_services_types',
+  'k8s_configmaps_secrets',
+  'k8s_resources_limits',
+  'k8s_probes',
+  'k8s_ingress',
+  'k8s_pvc_storage',
+  'k8s_jobs_cronjobs',
+  'k8s_helm_release',
+  'k8s_failure_modes',
+  'k8s_capstone_rollout_recovery'
+];
+
+const missingKubernetesQuests = kubernetesQuestIds.filter(id => !kubernetesSource.includes(id));
+if (missingKubernetesQuests.length > 0) {
+  console.error('Missing Kubernetes quests:');
+  for (const id of missingKubernetesQuests) {
+    console.error(`- ${id}`);
+  }
+  process.exit(1);
+}
+
+const kubernetesQuestionCount = (kubernetesSource.match(/question:/g) || []).length;
+if (kubernetesQuestionCount < 8) {
+  console.error(`Kubernetes module needs at least 8 quiz questions, found ${kubernetesQuestionCount}.`);
+  process.exit(1);
+}
+
 console.log('Training data scaffolding validation passed.');
 
