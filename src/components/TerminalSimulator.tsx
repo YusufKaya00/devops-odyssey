@@ -256,41 +256,51 @@ export const TerminalSimulator: React.FC<TerminalSimulatorProps> = ({
     } else if (cmd === 'docker') {
       const sub = args[1]?.toLowerCase();
       if (sub === 'run') {
+        const nameIndex = args.indexOf('--name');
+        const containerName = nameIndex !== -1 ? args[nameIndex + 1] : 'web';
+        const pIndex = args.indexOf('-p');
+        const containerPorts = pIndex !== -1 ? args[pIndex + 1] : '8080:80';
+        const img = args[args.length - 1];
         setSimState(prev => ({
           ...prev,
           docker: {
             ...prev.docker,
             containers: [...prev.docker.containers, {
               id: genSHA(),
-              name: 'devops-nginx-sandbox',
-              image: 'nginx',
-              ports: '8085:80',
+              name: containerName,
+              image: img,
+              ports: containerPorts,
               status: 'running'
             }]
           }
         }));
       } else if (sub === 'build') {
+        const tIndex = args.indexOf('-t');
+        const imgTag = tIndex !== -1 ? args[tIndex + 1] : 'my-app:v1.0';
         setSimState(prev => ({
           ...prev,
           docker: {
             ...prev.docker,
-            images: [...prev.docker.images, { tag: 'devops-mock-app:v1.0', id: 'sha256:' + genSHA(), created: 'Just now' }]
+            images: [...prev.docker.images, { tag: imgTag, id: 'sha256:' + genSHA(), created: 'Just now' }]
           }
         }));
       }
-    } else if (cmd === 'docker-compose') {
-      setSimState(prev => ({
-        ...prev,
-        docker: {
-          ...prev.docker,
-          composeActive: true,
-          containers: [
-            ...prev.docker.containers,
-            { id: genSHA(), name: 'devops-sandbox_web_1', image: 'nginx', ports: '8090:80', status: 'running' },
-            { id: genSHA(), name: 'devops-sandbox_cache_1', image: 'redis', ports: '6379:6379', status: 'running' }
-          ]
-        }
-      }));
+    } else if (cmd === 'docker-compose' || cmd === 'docker-compose.yml') {
+      const sub = args[1]?.toLowerCase();
+      if (sub === 'up' || sub === 'restart') {
+        setSimState(prev => ({
+          ...prev,
+          docker: {
+            ...prev.docker,
+            composeActive: true,
+            containers: [
+              ...prev.docker.containers,
+              { id: genSHA(), name: 'devops-sandbox_web_1', image: 'nginx', ports: '8090:80', status: 'running' },
+              { id: genSHA(), name: 'devops-sandbox_cache_1', image: 'redis', ports: '6379:6379', status: 'running' }
+            ]
+          }
+        }));
+      }
     } else if (cmd === 'kubectl') {
       const action = args[1]?.toLowerCase();
       if (action === 'run') {
@@ -611,7 +621,6 @@ export const TerminalSimulator: React.FC<TerminalSimulatorProps> = ({
       return;
     }
 
-    // Docker fallback
     if (cmd === 'docker') {
       const sub = args[1]?.toLowerCase();
       if (sub === 'ps') {
@@ -619,6 +628,9 @@ export const TerminalSimulator: React.FC<TerminalSimulatorProps> = ({
         simState.docker.containers.forEach(c => {
           printOut(`${c.id.slice(0,12)}   ${c.image.padEnd(10)} "/docker-entrypoint…"   5s ago   Up 5s   ${c.ports.padEnd(16)} ${c.name}`);
         });
+        if (simState.docker.containers.length === 0) {
+          printOut('No running containers.');
+        }
         return;
       }
       if (sub === 'images') {
@@ -628,7 +640,63 @@ export const TerminalSimulator: React.FC<TerminalSimulatorProps> = ({
         });
         return;
       }
+      if (sub === 'inspect') {
+        const target = args[2] || 'web';
+        printOut(`[\n  {\n    "Id": "e92a83cf8d1b",\n    "Name": "/${target}",\n    "State": { "Status": "running" },\n    "NetworkSettings": { "IPAddress": "172.17.0.2" }\n  }\n]`);
+        return;
+      }
+      if (sub === 'volume') {
+        const volSub = args[2]?.toLowerCase();
+        if (volSub === 'create') {
+          printOut(args[3] || 'data-volume');
+        } else {
+          printOut('data-volume');
+        }
+        return;
+      }
+      if (sub === 'network') {
+        const netSub = args[2]?.toLowerCase();
+        if (netSub === 'create') {
+          printOut('d8c89bfa2128');
+        } else {
+          printOut('my-net');
+        }
+        return;
+      }
+      if (sub === 'logs') {
+        const target = args[2] || 'web';
+        if (target.includes('proxy')) {
+          printOut('nginx: [emerg] bind() to 0.0.0.0:80 failed (98: Address already in use)\nweb-proxy exited with code 1');
+        } else {
+          printOut('172.17.0.1 - - [25/May/2026:12:30:10] "GET / HTTP/1.1" 200 612\n172.17.0.1 - - [25/May/2026:12:30:15] "GET /non-existent HTTP/1.1" 404 153');
+        }
+        return;
+      }
+      if (sub === 'exec') {
+        printOut('50x.html\nindex.html');
+        return;
+      }
+      if (sub === 'tag') {
+        printOut('Tagged image.');
+        return;
+      }
+      if (sub === 'push') {
+        printOut('The push refers to repository [registry.internal/my-app]\naefd02b8d234: Pushed\n96317b9b1d31: Layer already exists\nv1.0: digest: sha256:7f14b6 size: 948');
+        return;
+      }
       printOut(`docker command "${sub}" executed.`);
+      return;
+    }
+
+    if (cmd === 'docker-compose') {
+      const sub = args[1]?.toLowerCase();
+      if (sub === 'up') {
+        printOut('Creating network "sandbox_default" with the default driver\nCreating sandbox_db_1  ... done\nCreating sandbox_web_1 ... done');
+      } else if (sub === 'restart') {
+        printOut('Restarting sandbox_web-proxy_1 ... done\nRestarting sandbox_db_1        ... done');
+      } else {
+        printOut(`docker-compose command "${sub}" completed.`);
+      }
       return;
     }
 
