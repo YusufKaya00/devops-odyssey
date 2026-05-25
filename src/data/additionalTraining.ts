@@ -8,6 +8,7 @@ import { kubernetesModule } from './training/kubernetes';
 import { iacModule } from './training/iac';
 import { cicdModule } from './training/cicd';
 import { observabilityModule } from './training/observability';
+import { cloudModule } from './training/cloud';
 
 type QuestSeed = {
   id: string;
@@ -100,29 +101,8 @@ const additions: Record<number, { quests: Quest[]; quiz: ModuleQuizQuestion[] }>
     quiz: observabilityModule.quiz
   },
   11: {
-    quests: [
-      makeQuest({
-        id: "cloud_iam_policy",
-        title: "Write Least-Privilege IAM Policy",
-        difficulty: "Intermediate",
-        objective: "Model a narrow cloud permissions policy.",
-        commands: [
-          { title: "Create Policy", explanation: "Least privilege grants only the actions needed for a workload.", command: "echo \"Allow s3:GetObject on arn:aws:s3:::demo-bucket/*\" > iam.policy", output: "Wrote iam.policy." },
-          { title: "Review Policy", explanation: "Reviewing scope prevents broad admin permissions from becoming the default.", command: "cat iam.policy", output: "Allow s3:GetObject on arn:aws:s3:::demo-bucket/*" }
-        ]
-      }),
-      makeQuest({
-        id: "cloud_network_plan",
-        title: "Plan VPC Subnets and Security Groups",
-        difficulty: "Intermediate",
-        objective: "Model cloud network segmentation.",
-        commands: [
-          { title: "Write Network Plan", explanation: "Cloud networks separate public entry points from private application and data layers.", command: "echo \"public:10.0.1.0/24 private:10.0.2.0/24\" > vpc.plan", output: "Wrote vpc.plan." },
-          { title: "Review Network Plan", explanation: "CIDR review catches overlaps and accidental exposure early.", command: "cat vpc.plan", output: "public:10.0.1.0/24 private:10.0.2.0/24" }
-        ]
-      })
-    ],
-    quiz: moduleQuiz("cloud")
+    quests: cloudModule.quests,
+    quiz: cloudModule.quiz
   },
   12: {
     quests: [

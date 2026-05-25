@@ -824,6 +824,26 @@ export const TerminalSimulator: React.FC<TerminalSimulatorProps> = ({
       return;
     }
 
+    if (cmd === 'aws') {
+      const sub = args[1]?.toLowerCase();
+      if (sub === 'sts') {
+        printOut('{\n    "UserId": "AIDASODNDJASIODAS7",\n    "Account": "123456789012",\n    "Arn": "arn:aws:iam::123456789012:user/student"\n}');
+      } else if (sub === 'configure') {
+        printOut('us-east-1');
+      } else if (sub === 'iam') {
+        printOut('{\n    "EvaluationResults": [\n        {\n            "EvalActionName": "s3:PutObject",\n            "EvalResourceName": "arn:aws:s3:::demo-bucket",\n            "EvalDecision": "allowed"\n        }\n    ]\n}');
+      } else if (sub === 's3api') {
+        printOut('{\n    "Location": "/demo-bucket"\n}');
+      } else if (sub === 'ec2') {
+        printOut('{\n    "Instances": [\n        {\n            "InstanceId": "i-0abcdef1234567890",\n            "State": {\n                "Code": 16,\n                "Name": "running"\n            }\n        }\n    ]\n}');
+      } else if (sub === 'logs') {
+        printOut('{\n    "events": [\n        {\n            "timestamp": 1622000000000,\n            "message": "Application started successfully"\n        }\n    ]\n}');
+      } else {
+        printOut(`aws command "${sub}" completed.`);
+      }
+      return;
+    }
+
     // Default error
     printErr(`command not found or incorrect for this step: ${cmd}. Expected: "${interactiveSteps[activeStepIdx]?.expectedCommand || ''}"`);
   };
