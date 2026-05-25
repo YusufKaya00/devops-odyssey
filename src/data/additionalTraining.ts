@@ -3,6 +3,7 @@ import { linuxModule } from './training/linux';
 import { programmingModule } from './training/programming';
 import { networkingModule } from './training/networking';
 import { serverManagementModule } from './training/serverManagement';
+import { containersModule } from './training/containers';
 
 type QuestSeed = {
   id: string;
@@ -75,29 +76,8 @@ const additions: Record<number, { quests: Quest[]; quiz: ModuleQuizQuestion[] }>
     quiz: serverManagementModule.quiz
   },
   6: {
-    quests: [
-      makeQuest({
-        id: "docker_volume_network",
-        title: "Practice Docker Volumes and Networks",
-        difficulty: "Intermediate",
-        objective: "Model persistent data and private container networking.",
-        commands: [
-          { title: "Create a Network", explanation: "Custom bridge networks give containers service discovery and isolation.", command: "docker network create devops-net", output: "devops-net" },
-          { title: "Create a Volume", explanation: "Volumes persist data beyond a container lifecycle.", command: "docker volume create app-data", output: "app-data" }
-        ]
-      }),
-      makeQuest({
-        id: "docker_healthcheck",
-        title: "Add a Container Healthcheck",
-        difficulty: "Advanced",
-        objective: "Add a healthcheck instruction to a Dockerfile.",
-        commands: [
-          { title: "Write Healthcheck Dockerfile", explanation: "Healthchecks let orchestrators know whether a running process is actually healthy.", command: "echo \"FROM nginx\nHEALTHCHECK CMD curl -f http://localhost/ || exit 1\" > Dockerfile.health", output: "Wrote Dockerfile.health." },
-          { title: "Inspect Dockerfile", explanation: "The healthcheck becomes image metadata used by runtime tooling.", command: "cat Dockerfile.health", output: "FROM nginx\nHEALTHCHECK CMD curl -f http://localhost/ || exit 1" }
-        ]
-      })
-    ],
-    quiz: moduleQuiz("containers")
+    quests: containersModule.quests,
+    quiz: containersModule.quiz
   },
   7: {
     quests: [
