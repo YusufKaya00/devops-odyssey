@@ -268,5 +268,36 @@ if (iacQuestionCount < 8) {
   process.exit(1);
 }
 
+const cicdSource = fs.readFileSync(path.join(root, 'src/data/training/cicd.ts'), 'utf8');
+const cicdQuestIds = [
+  'cicd_pipeline_anatomy',
+  'cicd_build_stage',
+  'cicd_test_gate',
+  'cicd_artifacts',
+  'cicd_dependency_cache',
+  'cicd_env_secrets',
+  'cicd_matrix_jobs',
+  'cicd_manual_approval',
+  'cicd_staging_deploy',
+  'cicd_rollback',
+  'cicd_security_scan',
+  'cicd_capstone_full_pipeline'
+];
+
+const missingCicdQuests = cicdQuestIds.filter(id => !cicdSource.includes(id));
+if (missingCicdQuests.length > 0) {
+  console.error('Missing CI/CD quests:');
+  for (const id of missingCicdQuests) {
+    console.error(`- ${id}`);
+  }
+  process.exit(1);
+}
+
+const cicdQuestionCount = (cicdSource.match(/question:/g) || []).length;
+if (cicdQuestionCount < 8) {
+  console.error(`CI/CD module needs at least 8 quiz questions, found ${cicdQuestionCount}.`);
+  process.exit(1);
+}
+
 console.log('Training data scaffolding validation passed.');
 
