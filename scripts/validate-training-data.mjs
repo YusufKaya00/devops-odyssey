@@ -173,5 +173,36 @@ if (serverManagementQuestionCount < 8) {
   process.exit(1);
 }
 
+const containersSource = fs.readFileSync(path.join(root, 'src/data/training/containers.ts'), 'utf8');
+const containersQuestIds = [
+  'docker_run_inspect',
+  'docker_layers_dockerfile',
+  'docker_build_tag',
+  'docker_env_config',
+  'docker_volumes',
+  'docker_networks',
+  'docker_compose_stack',
+  'docker_logs_exec',
+  'docker_healthcheck',
+  'docker_image_optimization',
+  'docker_registry_mock',
+  'docker_stack_capstone'
+];
+
+const missingContainersQuests = containersQuestIds.filter(id => !containersSource.includes(id));
+if (missingContainersQuests.length > 0) {
+  console.error('Missing containers quests:');
+  for (const id of missingContainersQuests) {
+    console.error(`- ${id}`);
+  }
+  process.exit(1);
+}
+
+const containersQuestionCount = (containersSource.match(/question:/g) || []).length;
+if (containersQuestionCount < 8) {
+  console.error(`Containers module needs at least 8 quiz questions, found ${containersQuestionCount}.`);
+  process.exit(1);
+}
+
 console.log('Training data scaffolding validation passed.');
 
