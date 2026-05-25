@@ -4,8 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "predev": "node scripts/clean-ports.mjs",
     "dev": "concurrently \"vite\" \"node server.js\"",
-    "build": "tsc -b && vite build",
+    "build": "node scripts/build.mjs",
     "lint": "eslint .",
     "validate:training": "node scripts/validate-training-data.mjs",
     "preview": "vite preview"
