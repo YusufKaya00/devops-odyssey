@@ -809,6 +809,21 @@ export const TerminalSimulator: React.FC<TerminalSimulatorProps> = ({
       return;
     }
 
+    if (cmd === 'promtool') {
+      const sub = args[1]?.toLowerCase();
+      if (sub === 'check') {
+        printOut('Checking alerts.yml\n  SUCCESS: 1 rules found');
+      } else {
+        printOut('promtool checking succeeded.');
+      }
+      return;
+    }
+
+    if (cmd === 'promql') {
+      printOut('Element                                   Value\nhttp_requests_total{status="500"}          142\nhttp_requests_total{status="200"}          12405');
+      return;
+    }
+
     // Default error
     printErr(`command not found or incorrect for this step: ${cmd}. Expected: "${interactiveSteps[activeStepIdx]?.expectedCommand || ''}"`);
   };

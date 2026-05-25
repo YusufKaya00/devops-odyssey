@@ -7,6 +7,7 @@ import { containersModule } from './training/containers';
 import { kubernetesModule } from './training/kubernetes';
 import { iacModule } from './training/iac';
 import { cicdModule } from './training/cicd';
+import { observabilityModule } from './training/observability';
 
 type QuestSeed = {
   id: string;
@@ -95,29 +96,8 @@ const additions: Record<number, { quests: Quest[]; quiz: ModuleQuizQuestion[] }>
     quiz: cicdModule.quiz
   },
   10: {
-    quests: [
-      makeQuest({
-        id: "prometheus_alert_rule",
-        title: "Create a Prometheus Alert Rule",
-        difficulty: "Intermediate",
-        objective: "Model an alert for high error rate.",
-        commands: [
-          { title: "Write Alert Rule", explanation: "Alerts turn metrics into human action. Good alerts point to user impact, not noise.", command: "echo \"alert: HighErrorRate\nexpr: rate(http_500_total[5m]) > 0.05\" > alerts.yml", output: "Wrote alerts.yml." },
-          { title: "Review Rule", explanation: "The expression should be specific enough to avoid alert fatigue.", command: "cat alerts.yml", output: "alert: HighErrorRate\nexpr: rate(http_500_total[5m]) > 0.05" }
-        ]
-      }),
-      makeQuest({
-        id: "slo_error_budget",
-        title: "Calculate an SLO Error Budget",
-        difficulty: "Advanced",
-        objective: "Practice the reliability math behind SRE decisions.",
-        commands: [
-          { title: "Define SLO", explanation: "A 99.9 percent SLO allows 0.1 percent bad requests in the measurement window.", command: "echo \"requests=100000 errors=60 slo=99.9\" > slo.txt", output: "Wrote slo.txt." },
-          { title: "Evaluate Budget", explanation: "Error budget thinking connects reliability targets to release velocity.", command: "cat slo.txt", output: "requests=100000 errors=60 slo=99.9\nbudget remaining: 40 errors" }
-        ]
-      })
-    ],
-    quiz: moduleQuiz("monitoring and observability")
+    quests: observabilityModule.quests,
+    quiz: observabilityModule.quiz
   },
   11: {
     quests: [
