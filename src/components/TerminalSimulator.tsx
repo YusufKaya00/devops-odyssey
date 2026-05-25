@@ -330,13 +330,30 @@ export const TerminalSimulator: React.FC<TerminalSimulatorProps> = ({
         ...prev,
         permissions: { ...prev.permissions, 'run_check.sh': 'rwxr-xr-x' }
       }));
-    } else if (cmdLine.includes('>')) {
-      const parts = cmdLine.split('>');
+    } else if (cmdLine.includes('>') || cmdLine.includes('>>')) {
+      const isAppend = cmdLine.includes('>>');
+      const delimiter = isAppend ? '>>' : '>';
+      const parts = cmdLine.split(delimiter);
+      const echoPart = parts[0].trim();
       const file = parts[parts.length - 1].trim();
-      setSimState(prev => ({
-        ...prev,
-        fs: { ...prev.fs, [file]: 'Simulated file contents.' }
-      }));
+      
+      let content = 'Simulated file contents.';
+      if (echoPart.toLowerCase().startsWith('echo ')) {
+        let text = echoPart.slice(5).trim();
+        if ((text.startsWith('"') && text.endsWith('"')) || (text.startsWith("'") && text.endsWith("'"))) {
+          text = text.slice(1, -1);
+        }
+        content = text.replace(/\\n/g, '\n');
+      }
+
+      setSimState(prev => {
+        const oldContent = prev.fs[file] || '';
+        const newContent = isAppend ? (oldContent ? oldContent + '\n' + content : content) : content;
+        return {
+          ...prev,
+          fs: { ...prev.fs, [file]: newContent }
+        };
+      });
     }
   };
 
@@ -402,6 +419,107 @@ export const TerminalSimulator: React.FC<TerminalSimulatorProps> = ({
         printOut(simState.fs[file]);
       } else {
         printErr(`cat: ${file || ''}: No such file or directory`);
+      }
+      return;
+    }
+
+    if (cmdLine.includes('>') || cmdLine.includes('>>')) {
+      const isAppend = cmdLine.includes('>>');
+      const delimiter = isAppend ? '>>' : '>';
+      const parts = cmdLine.split(delimiter);
+      const echoPart = parts[0].trim();
+      const file = parts[parts.length - 1].trim();
+      
+      let content = 'Simulated file contents.';
+      if (echoPart.toLowerCase().startsWith('echo ')) {
+        let text = echoPart.slice(5).trim();
+        if ((text.startsWith('"') && text.endsWith('"')) || (text.startsWith("'") && text.endsWith("'"))) {
+          text = text.slice(1, -1);
+        }
+        content = text.replace(/\\n/g, '\n');
+      }
+
+      setSimState(prev => {
+        const oldContent = prev.fs[file] || '';
+        const newContent = isAppend ? (oldContent ? oldContent + '\n' + content : content) : content;
+        return {
+          ...prev,
+          fs: { ...prev.fs, [file]: newContent }
+        };
+      });
+      printOut(isAppend ? 'Appended to file.' : `Wrote ${file}.`);
+      return;
+    }
+
+    if (cmd === 'echo') {
+      let text = cmdLine.slice(5).trim();
+      if ((text.startsWith('"') && text.endsWith('"')) || (text.startsWith("'") && text.endsWith("'"))) {
+        text = text.slice(1, -1);
+      }
+      printOut(text.replace(/\\n/g, '\n'));
+      return;
+    }
+
+    if (cmd === 'nslookup' || cmd === 'dig') {
+      const target = args[1] || 'api.internal';
+      if (target.includes('checkout.internal')) {
+        printOut('Server:         127.0.0.53\nAddress:        127.0.0.53#53\n\nNon-authoritative answer:\nName:   checkout.internal\nAddress: 10.0.2.44');
+      } else if (target.includes('shop.example.internal')) {
+        printOut('Server:         127.0.0.53\nAddress:        127.0.0.53#53\n\nNon-authoritative answer:\nName:   shop.example.internal\nAddress: 10.0.10.20');
+      } else {
+        printOut(`Server:         127.0.0.53\nAddress:        127.0.0.53#53\n\nNon-authoritative answer:\nName:   ${target}\nAddress: 10.0.2.15`);
+      }
+      return;
+    }
+
+    if (cmd === 'curl') {
+      const target = args.find(a => a.startsWith('http') || a.includes('internal') || a.includes('example'));
+      if (target) {
+        if (target.includes('checkout.internal')) {
+          printErr('curl: (60) SSL: certificate subject name api.internal does not match checkout.internal');
+        } else if (target.includes('shop.example.internal')) {
+          printOut('HTTP/2 502\nserver: nginx\ndate: Mon, 25 May 2026 22:45:53 GMT\ncontent-length: 150\ncontent-type: text/html');
+        } else if (target.includes('api.internal/health')) {
+          printOut('HTTP/2 200\ncontent-type: application/json\ncache-control: no-store\n\n{"status":"healthy"}');
+        } else {
+          printOut('HTTP/2 200 OK\nContent-Type: text/html\nServer: nginx');
+        }
+      } else {
+        printErr('curl: try "curl -I https://api.internal/health"');
+      }
+      return;
+    }
+
+    if (cmd === 'openssl') {
+      if (cmdLine.includes('s_client')) {
+        printOut('CONNECTED(00000003)\ndepth=0 CN = api.internal\nverify error:num=20:unable to get local issuer certificate\nverify return:1\n---\nCertificate chain\n 0 s:CN = api.internal\n   i:CN = Internal CA\n---\nsubject=CN=api.internal\nissuer=CN=Internal CA\n---\nNo client certificate CA names sent\n---\nSSL handshake has read 1240 bytes and written 340 bytes\nVerification: OK');
+      } else {
+        printOut('openssl mock utility. For TLS inspection, use: openssl s_client -connect <host>:<port>');
+      }
+      return;
+    }
+
+    if (cmd === 'ss' || cmd === 'netstat') {
+      printOut('LISTEN 0 128 0.0.0.0:80 users:(("nginx",pid=21))\nLISTEN 0 128 0.0.0.0:443 users:(("nginx",pid=21))\nLISTEN 0 128 127.0.0.1:3000 users:(("node",pid=42))');
+      return;
+    }
+
+    if (cmd === 'grep') {
+      const pattern = args[1]?.replace(/['"]/g, '');
+      const file = args[2];
+      if (!pattern || !file) {
+        printErr('Usage: grep <pattern> <filename>');
+        return;
+      }
+      const fileContent = simState.fs[file];
+      if (fileContent !== undefined) {
+        const lines = fileContent.split('\n');
+        const matched = lines.filter(l => l.toLowerCase().includes(pattern.toLowerCase()));
+        if (matched.length > 0) {
+          printOut(matched.join('\n'));
+        }
+      } else {
+        printErr(`grep: ${file}: No such file or directory`);
       }
       return;
     }
