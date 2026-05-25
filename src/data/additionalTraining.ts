@@ -6,6 +6,7 @@ import { serverManagementModule } from './training/serverManagement';
 import { containersModule } from './training/containers';
 import { kubernetesModule } from './training/kubernetes';
 import { iacModule } from './training/iac';
+import { cicdModule } from './training/cicd';
 
 type QuestSeed = {
   id: string;
@@ -90,29 +91,8 @@ const additions: Record<number, { quests: Quest[]; quiz: ModuleQuizQuestion[] }>
     quiz: iacModule.quiz
   },
   9: {
-    quests: [
-      makeQuest({
-        id: "gha_test_gate",
-        title: "Add a CI Test Gate",
-        difficulty: "Intermediate",
-        objective: "Model a pipeline that installs dependencies and runs tests.",
-        commands: [
-          { title: "Write Test Job", explanation: "A CI gate prevents unverified code from moving further through delivery.", command: "echo \"jobs:\n  test:\n    steps:\n      - run: npm test\" > ci-test.yml", output: "Wrote ci-test.yml." },
-          { title: "Inspect Pipeline", explanation: "Pipeline YAML should make the verification path obvious to reviewers.", command: "cat ci-test.yml", output: "jobs:\n  test:\n    steps:\n      - run: npm test" }
-        ]
-      }),
-      makeQuest({
-        id: "gha_artifact_secret",
-        title: "Artifacts and Secrets in Pipelines",
-        difficulty: "Advanced",
-        objective: "Model artifact publication and secret usage boundaries.",
-        commands: [
-          { title: "Write Artifact Step", explanation: "Artifacts move build output between jobs and into release systems.", command: "echo \"upload-artifact: dist/\" > artifact.yml", output: "Wrote artifact.yml." },
-          { title: "Write Secret Reference", explanation: "Pipelines should reference secrets through the platform secret store, not hardcoded text.", command: "echo \"TOKEN: \\${{ secrets.DEPLOY_TOKEN }}\" > secret-ref.yml", output: "Wrote secret-ref.yml." }
-        ]
-      })
-    ],
-    quiz: moduleQuiz("CI/CD")
+    quests: cicdModule.quests,
+    quiz: cicdModule.quiz
   },
   10: {
     quests: [
