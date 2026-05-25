@@ -109,9 +109,28 @@ const renderModuleIcon = (iconName: string) => {
   }
 };
 
+const defaultUserData: UserData = {
+  completedQuests: [],
+  completedSteps: [],
+  experiencePoints: 0,
+  streak: 0,
+  lastActiveDate: null,
+  levelInfo: { level: 1, title: 'DevOps Novice', nextLevelXp: 200 }
+};
+
 function App() {
   const [activeTab, setActiveTab] = useState<string | number>('dashboard');
-  const [userData, setUserData] = useState<UserData | null>(null);
+  const [userData, setUserData] = useState<UserData>(() => {
+    const local = localStorage.getItem('devops_odyssey_progress');
+    if (local) {
+      try {
+        return JSON.parse(local);
+      } catch {
+        // ignore
+      }
+    }
+    return defaultUserData;
+  });
   const [activeQuest, setActiveQuest] = useState<Quest | null>(null);
   const [verifying, setVerifying] = useState<boolean>(false);
   const [verifyResult, setVerifyResult] = useState<{ success: boolean; message: string } | null>(null);
@@ -135,6 +154,7 @@ function App() {
       }
       const data = await res.json();
       setUserData(data);
+      localStorage.setItem('devops_odyssey_progress', JSON.stringify(data));
       
       // Auto-detect OS of backend
       if (data.hostOS) {
@@ -163,7 +183,6 @@ function App() {
 
   // Verify Action
   const handleVerify = async (quest: Quest, options?: { isSimulated?: boolean }) => {
-    if (!userData) return;
     setVerifying(true);
     setVerifyResult(null);
     try {
@@ -183,12 +202,44 @@ function App() {
       });
       if (result.success && result.data) {
         setUserData(result.data);
+        localStorage.setItem('devops_odyssey_progress', JSON.stringify(result.data));
       }
     } catch {
-      setVerifyResult({
-        success: false,
-        message: 'Could not connect to the verification server. Ensure the backend is active.'
-      });
+      // Offline fallback: simulated verification automatically succeeds in local mode
+      if (options?.isSimulated) {
+        const updatedQuests = [...(userData.completedQuests || [])];
+        if (!updatedQuests.includes(quest.validatorKey)) {
+          updatedQuests.push(quest.validatorKey);
+        }
+        const xpReward = quest.difficulty === 'Beginner' ? 100 : quest.difficulty === 'Intermediate' ? 200 : 300;
+        const newXp = (userData.experiencePoints || 0) + xpReward;
+        
+        const calculateLevel = (xp: number) => {
+          if (xp < 200) return { level: 1, title: 'DevOps Novice', nextLevelXp: 200 };
+          if (xp < 500) return { level: 2, title: 'Linux Apprentice', nextLevelXp: 500 };
+          if (xp < 1000) return { level: 3, title: 'Docker Operator', nextLevelXp: 1000 };
+          if (xp < 1800) return { level: 4, title: 'Kubernetes Engineer', nextLevelXp: 1800 };
+          return { level: 5, title: 'Cloud Architect', nextLevelXp: 3000 };
+        };
+
+        const updatedUser = {
+          ...userData,
+          completedQuests: updatedQuests,
+          experiencePoints: newXp,
+          levelInfo: calculateLevel(newXp)
+        };
+        setUserData(updatedUser);
+        localStorage.setItem('devops_odyssey_progress', JSON.stringify(updatedUser));
+        setVerifyResult({
+          success: true,
+          message: 'Quest completed successfully inside the simulator!'
+        });
+      } else {
+        setVerifyResult({
+          success: false,
+          message: 'Could not connect to the verification server. Ensure the backend is active.'
+        });
+      }
     } finally {
       setVerifying(false);
     }
@@ -197,16 +248,27 @@ function App() {
   // Reset Progress
   const handleReset = async () => {
     if (!window.confirm("Are you sure you want to reset all your learning progress? This cannot be undone.")) return;
+    localStorage.removeItem('devops_odyssey_progress');
+    const freshUser: UserData = {
+      completedQuests: [],
+      completedSteps: [],
+      experiencePoints: 0,
+      streak: 0,
+      lastActiveDate: null,
+      levelInfo: { level: 1, title: 'DevOps Novice', nextLevelXp: 200 }
+    };
+    setUserData(freshUser);
+    setActiveQuest(null);
+    setVerifyResult(null);
     try {
       const res = await fetch('http://localhost:5001/api/reset', { method: 'POST' });
       const result = await res.json();
       if (result.success) {
         setUserData(result.data);
-        setActiveQuest(null);
-        setVerifyResult(null);
+        localStorage.setItem('devops_odyssey_progress', JSON.stringify(result.data));
       }
     } catch {
-      alert("Error resetting progress.");
+      console.warn('Backend reset offline.');
     }
   };
 
@@ -306,6 +368,31 @@ function App() {
     const allStepsDone = activeStepIdx >= steps.length;
 
     const handleStepComplete = async (stepIdx: number) => {
+      const stepKey = `${activeQuest.validatorKey}:${stepIdx}`;
+      const currentSteps = userData.completedSteps || [];
+      const updatedSteps = currentSteps.includes(stepKey) ? currentSteps : [...currentSteps, stepKey];
+      
+      const xpMultiplier = activeQuest.difficulty === 'Beginner' ? 10 : activeQuest.difficulty === 'Intermediate' ? 15 : 20;
+      const newXp = (userData.experiencePoints || 0) + xpMultiplier;
+      
+      const calculateLevel = (xp: number) => {
+        if (xp < 200) return { level: 1, title: 'DevOps Novice', nextLevelXp: 200 };
+        if (xp < 500) return { level: 2, title: 'Linux Apprentice', nextLevelXp: 500 };
+        if (xp < 1000) return { level: 3, title: 'Docker Operator', nextLevelXp: 1000 };
+        if (xp < 1800) return { level: 4, title: 'Kubernetes Engineer', nextLevelXp: 1800 };
+        return { level: 5, title: 'Cloud Architect', nextLevelXp: 3000 };
+      };
+
+      const updatedUser = {
+        ...userData,
+        completedSteps: updatedSteps,
+        experiencePoints: newXp,
+        levelInfo: calculateLevel(newXp)
+      };
+
+      setUserData(updatedUser);
+      localStorage.setItem('devops_odyssey_progress', JSON.stringify(updatedUser));
+
       // Call backend to save step completion progress
       try {
         const res = await fetch('http://localhost:5001/api/verify', {
@@ -320,14 +407,15 @@ function App() {
         const result = await res.json();
         if (result.success && result.data) {
           setUserData(result.data);
-          
-          // If this was the last sub-step, trigger full quest completion automatically!
-          if (stepIdx === steps.length - 1) {
-            handleVerify(activeQuest, { isSimulated: true });
-          }
+          localStorage.setItem('devops_odyssey_progress', JSON.stringify(result.data));
         }
       } catch (e) {
         console.error('Failed to sync sub-step progress', e);
+      }
+
+      // If this was the last sub-step, trigger full quest completion automatically!
+      if (stepIdx === steps.length - 1) {
+        await handleVerify(activeQuest, { isSimulated: true });
       }
     };
 
