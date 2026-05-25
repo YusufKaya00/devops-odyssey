@@ -4,6 +4,7 @@ import { programmingModule } from './training/programming';
 import { networkingModule } from './training/networking';
 import { serverManagementModule } from './training/serverManagement';
 import { containersModule } from './training/containers';
+import { kubernetesModule } from './training/kubernetes';
 
 type QuestSeed = {
   id: string;
@@ -80,29 +81,8 @@ const additions: Record<number, { quests: Quest[]; quiz: ModuleQuizQuestion[] }>
     quiz: containersModule.quiz
   },
   7: {
-    quests: [
-      makeQuest({
-        id: "k8s_deployment_rollout",
-        title: "Kubernetes Deployment Rollout",
-        difficulty: "Intermediate",
-        objective: "Create and inspect a Deployment rollout.",
-        commands: [
-          { title: "Create Deployment", explanation: "Deployments manage ReplicaSets and give you declarative rollout controls.", command: "kubectl create deployment web --image=nginx", output: "deployment.apps/web created" },
-          { title: "Check Rollout", explanation: "Rollout status tells you whether the desired state became ready.", command: "kubectl rollout status deployment/web", output: "deployment \"web\" successfully rolled out" }
-        ]
-      }),
-      makeQuest({
-        id: "k8s_config_secret",
-        title: "ConfigMap and Secret Basics",
-        difficulty: "Intermediate",
-        objective: "Model app configuration and sensitive values as Kubernetes resources.",
-        commands: [
-          { title: "Create ConfigMap", explanation: "ConfigMaps keep non-secret configuration separate from container images.", command: "kubectl create configmap app-config --from-literal=MODE=prod", output: "configmap/app-config created" },
-          { title: "Create Secret", explanation: "Secrets are Kubernetes objects for sensitive values, with access controlled by RBAC and namespace boundaries.", command: "kubectl create secret generic app-secret --from-literal=TOKEN=demo", output: "secret/app-secret created" }
-        ]
-      })
-    ],
-    quiz: moduleQuiz("Kubernetes")
+    quests: kubernetesModule.quests,
+    quiz: kubernetesModule.quiz
   },
   8: {
     quests: [
