@@ -842,7 +842,9 @@ function App() {
                     Type the following command in the terminal prompt:
                   </p>
                   <code className="cmd-highlight">{steps[activeStepIdx]?.expectedCommand}</code>
-                                <div className="steps-progress-checklist">
+                </div>
+
+                <div className="steps-progress-checklist">
                   <h4 style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '10px' }}>
                     Lab Progress {isQuestAlreadyCompleted && "(Review Mode)"}
                   </h4>
@@ -927,10 +929,9 @@ function App() {
               activeStepIndexOverride={isQuestAlreadyCompleted ? activeStepIdx : undefined}
               onStepChange={(newIdx) => setReviewedStepIdx(newIdx)}
             />
-          </div>/>
+          </div>
           </div>
         </div>
-      </div>
     );
   }
 
