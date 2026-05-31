@@ -159,6 +159,7 @@ function App() {
     return defaultUserData;
   });
   const [activeQuest, setActiveQuest] = useState<Quest | null>(null);
+  const [reviewedStepIdx, setReviewedStepIdx] = useState<number | null>(null);
   const [verifying, setVerifying] = useState<boolean>(false);
   const [verifyResult, setVerifyResult] = useState<{ success: boolean; message: string } | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
@@ -608,6 +609,7 @@ function App() {
     };
     setUserData(freshUser);
     setActiveQuest(null);
+    setReviewedStepIdx(null);
     setVerifyResult(null);
     try {
       const res = await fetch('http://localhost:5001/api/reset', {
@@ -642,6 +644,7 @@ function App() {
   const handleModuleClick = (modId: number) => {
     setActiveTab(modId);
     setActiveQuest(null);
+    setReviewedStepIdx(null);
     setVerifyResult(null);
   };
 
@@ -704,17 +707,26 @@ function App() {
   if (activeQuest && userData) {
     const steps = activeQuest.interactiveSteps || [];
     
+    const isQuestAlreadyCompleted = userData.completedQuests.includes(activeQuest.validatorKey);
+
     // Find current active step index
     let activeStepIdx = 0;
-    for (let i = 0; i < steps.length; i++) {
-      if (!userData.completedSteps?.includes(`${activeQuest.validatorKey}:${i}`)) {
-        activeStepIdx = i;
-        break;
+    if (isQuestAlreadyCompleted) {
+      if (reviewedStepIdx === null) {
+        setReviewedStepIdx(0);
       }
-      activeStepIdx = i + 1;
+      activeStepIdx = Math.min(reviewedStepIdx ?? 0, steps.length > 0 ? steps.length - 1 : 0);
+    } else {
+      for (let i = 0; i < steps.length; i++) {
+        if (!userData.completedSteps?.includes(`${activeQuest.validatorKey}:${i}`)) {
+          activeStepIdx = i;
+          break;
+        }
+        activeStepIdx = i + 1;
+      }
     }
     
-    const allStepsDone = activeStepIdx >= steps.length;
+    const allStepsDone = !isQuestAlreadyCompleted && (activeStepIdx >= steps.length);
 
     const handleStepComplete = async (stepIdx: number) => {
       const stepKey = `${activeQuest.validatorKey}:${stepIdx}`;
@@ -773,7 +785,7 @@ function App() {
         {/* Header */}
         <header className="focused-lab-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <button className="btn btn-secondary" onClick={() => setActiveQuest(null)} style={{ padding: '8px 16px' }}>
+            <button className="btn btn-secondary" onClick={() => { setActiveQuest(null); setReviewedStepIdx(null); }} style={{ padding: '8px 16px' }}>
               ← Exit Lab (Geri Dön)
             </button>
             <div>
@@ -830,17 +842,24 @@ function App() {
                     Type the following command in the terminal prompt:
                   </p>
                   <code className="cmd-highlight">{steps[activeStepIdx]?.expectedCommand}</code>
-                </div>
-
-                <div className="steps-progress-checklist">
+                                <div className="steps-progress-checklist">
                   <h4 style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '10px' }}>
-                    Lab Progress
+                    Lab Progress {isQuestAlreadyCompleted && "(Review Mode)"}
                   </h4>
                   {steps.map((s, idx) => {
-                    const isStepDone = userData.completedSteps?.includes(`${activeQuest.validatorKey}:${idx}`);
+                    const isStepDone = userData.completedSteps?.includes(`${activeQuest.validatorKey}:${idx}`) || isQuestAlreadyCompleted;
                     const isStepActive = idx === activeStepIdx;
                     return (
-                      <div key={idx} className={`checklist-item ${isStepActive ? 'active' : ''} ${isStepDone ? 'done' : ''}`}>
+                      <div 
+                        key={idx} 
+                        className={`checklist-item ${isStepActive ? 'active' : ''} ${isStepDone ? 'done' : ''}`}
+                        onClick={() => {
+                          if (isQuestAlreadyCompleted) {
+                            setReviewedStepIdx(idx);
+                          }
+                        }}
+                        style={{ cursor: isQuestAlreadyCompleted ? 'pointer' : 'default' }}
+                      >
                         <span className="chk-icon">{isStepDone ? '✓' : isStepActive ? '●' : '○'}</span>
                         <span className="chk-text">{s.title}</span>
                       </div>
@@ -851,6 +870,27 @@ function App() {
                 <div style={{ fontSize: '12px', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.01)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
                   <strong>Hint:</strong> {steps[activeStepIdx]?.hint}
                 </div>
+
+                {isQuestAlreadyCompleted && (
+                  <div className="review-navigation-controls" style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
+                    <button 
+                      className="btn btn-secondary" 
+                      disabled={activeStepIdx === 0}
+                      onClick={() => setReviewedStepIdx(activeStepIdx - 1)}
+                      style={{ flex: 1, padding: '8px 16px', fontSize: '13px' }}
+                    >
+                      ← Previous
+                    </button>
+                    <button 
+                      className="btn btn-secondary" 
+                      disabled={activeStepIdx === steps.length - 1}
+                      onClick={() => setReviewedStepIdx(activeStepIdx + 1)}
+                      style={{ flex: 1, padding: '8px 16px', fontSize: '13px' }}
+                    >
+                      Next →
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '40px 20px' }}>
@@ -866,7 +906,7 @@ function App() {
                   </strong>
                 </div>
                 <div style={{ display: 'flex', gap: '12px' }}>
-                  <button className="btn btn-primary" onClick={() => setActiveQuest(null)} style={{ padding: '12px 32px' }}>
+                  <button className="btn btn-primary" onClick={() => { setActiveQuest(null); setReviewedStepIdx(null); }} style={{ padding: '12px 32px' }}>
                     Return to Roadmap
                   </button>
                 </div>
@@ -877,13 +917,17 @@ function App() {
           {/* RIGHT PANEL: INTERACTIVE TERMINAL SIMULATOR */}
           <div className="focused-lab-right-panel">
             <TerminalSimulator
-              key={activeQuest.validatorKey}
+              key={`${activeQuest.validatorKey}-${isQuestAlreadyCompleted ? activeStepIdx : 'progress'}`}
               questId={activeQuest.title}
               validatorKey={activeQuest.validatorKey}
               interactiveSteps={steps}
               completedSteps={userData.completedSteps || []}
               onStepComplete={handleStepComplete}
+              isReviewMode={isQuestAlreadyCompleted}
+              activeStepIndexOverride={isQuestAlreadyCompleted ? activeStepIdx : undefined}
+              onStepChange={(newIdx) => setReviewedStepIdx(newIdx)}
             />
+          </div>/>
           </div>
         </div>
       </div>
@@ -1520,6 +1564,11 @@ function App() {
                           onClick={() => {
                             setActiveQuest(q);
                             setVerifyResult(null);
+                            if (userData?.completedQuests.includes(q.validatorKey)) {
+                              setReviewedStepIdx(0);
+                            } else {
+                              setReviewedStepIdx(null);
+                            }
                           }}
                         >
                           <div className="quest-meta">

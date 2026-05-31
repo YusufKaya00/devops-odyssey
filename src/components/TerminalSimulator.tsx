@@ -7,6 +7,9 @@ interface TerminalSimulatorProps {
   interactiveSteps: InteractiveStep[];
   completedSteps: string[]; // e.g. ["git_reflog:0", "git_reflog:1"]
   onStepComplete: (stepIndex: number) => void;
+  isReviewMode?: boolean;
+  activeStepIndexOverride?: number;
+  onStepChange?: (newIndex: number) => void;
 }
 
 interface SimState {
@@ -91,7 +94,10 @@ export const TerminalSimulator: React.FC<TerminalSimulatorProps> = ({
   validatorKey,
   interactiveSteps,
   completedSteps,
-  onStepComplete
+  onStepComplete,
+  isReviewMode = false,
+  activeStepIndexOverride,
+  onStepChange
 }) => {
   const [history, setHistory] = useState<string[]>([]);
   const [inputVal, setInputVal] = useState<string>('');
@@ -117,8 +123,10 @@ export const TerminalSimulator: React.FC<TerminalSimulatorProps> = ({
     return interactiveSteps.length; // All completed
   };
 
-  const activeStepIdx = getActiveStepIdx();
-  const allStepsCompleted = activeStepIdx >= interactiveSteps.length;
+  const activeStepIdx = isReviewMode && activeStepIndexOverride !== undefined
+    ? activeStepIndexOverride
+    : getActiveStepIdx();
+  const allStepsCompleted = !isReviewMode && (activeStepIdx >= interactiveSteps.length);
 
   // Focus terminal input on click
   const handleTerminalClick = () => {
@@ -141,6 +149,7 @@ export const TerminalSimulator: React.FC<TerminalSimulatorProps> = ({
     if (allStepsCompleted) return false;
     
     const target = interactiveSteps[activeStepIdx];
+    if (!target) return false;
     
     // Clean string helper (remove quotes, trim whitespace, ignore case)
     const clean = (s: string) => s.toLowerCase().trim().replace(/['"`]/g, '').replace(/\s+/g, ' ');
@@ -155,8 +164,14 @@ export const TerminalSimulator: React.FC<TerminalSimulatorProps> = ({
       printOut(target.mockOutput);
       printSuccess(`✓ Correct: completed Step "${target.title}"!`);
       
-      // Callback to save progress in Supabase
-      onStepComplete(activeStepIdx);
+      // Callback to save progress or change step in review mode
+      if (isReviewMode) {
+        if (onStepChange && activeStepIdx < interactiveSteps.length - 1) {
+          onStepChange(activeStepIdx + 1);
+        }
+      } else {
+        onStepComplete(activeStepIdx);
+      }
       return true;
     }
     return false;
