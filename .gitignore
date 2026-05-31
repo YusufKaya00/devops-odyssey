@@ -26,5 +26,6 @@ dist-ssr
 # DevOps Odyssey Custom Exclusions
 .env
 userdata.json
+userdata_*.json
 devops-sandbox/
 devops-roadmap-source/

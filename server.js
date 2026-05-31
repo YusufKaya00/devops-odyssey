@@ -59,6 +59,42 @@ function calculateLevel(xp) {
   return { level: 5, title: 'Cloud Architect', nextLevelXp: 3000 };
 }
 
+// Middleware to authenticate Google ID token via Google Tokeninfo API
+async function authenticateGoogleToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const idToken = authHeader.split(' ')[1];
+    try {
+      const googleRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
+      if (!googleRes.ok) {
+        return res.status(401).json({ success: false, message: 'Invalid or expired Google token' });
+      }
+      const payload = await googleRes.json();
+      
+      // Validate audience matches process.env.GOOGLE_CLIENT_ID
+      const allowedClientIds = [process.env.GOOGLE_CLIENT_ID, process.env.VITE_GOOGLE_CLIENT_ID];
+      if (!allowedClientIds.includes(payload.aud)) {
+        return res.status(401).json({ success: false, message: 'Audience mismatch' });
+      }
+
+      req.user = {
+        id: payload.sub,
+        email: payload.email,
+        name: payload.name,
+        avatarUrl: payload.picture
+      };
+    } catch (e) {
+      console.error('Error validating Google token:', e);
+      return res.status(401).json({ success: false, message: 'Authentication failed: ' + e.message });
+    }
+  } else {
+    req.user = null;
+  }
+  next();
+}
+
+app.use(authenticateGoogleToken);
+
 // Health Endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', serverTime: new Date() });
@@ -67,7 +103,12 @@ app.get('/api/health', (req, res) => {
 // Get User Profile & Progress
 app.get('/api/status', async (req, res) => {
   try {
-    const data = await getUserData();
+    const userId = req.user ? req.user.id : (req.headers['x-user-id'] || 'local_user');
+    const email = req.user ? req.user.email : null;
+    const displayName = req.user ? req.user.name : null;
+    const avatarUrl = req.user ? req.user.avatarUrl : null;
+
+    const data = await getUserData(userId, email, displayName, avatarUrl);
     const levelInfo = calculateLevel(data.experiencePoints);
     res.json({
       ...data,
@@ -83,6 +124,11 @@ app.get('/api/status', async (req, res) => {
 
 // Verify a Quest
 app.post('/api/verify', async (req, res) => {
+  const userId = req.user ? req.user.id : (req.headers['x-user-id'] || 'local_user');
+  const email = req.user ? req.user.email : null;
+  const displayName = req.user ? req.user.name : null;
+  const avatarUrl = req.user ? req.user.avatarUrl : null;
+
   const { validatorKey, difficulty, isSimulated, stepIndex } = req.body;
   
   if (!validatorKey) {
@@ -92,7 +138,7 @@ app.post('/api/verify', async (req, res) => {
   // Handle single sub-step verification
   if (stepIndex !== undefined) {
     try {
-      const data = await getUserData();
+      const data = await getUserData(userId, email, displayName, avatarUrl);
       const stepKey = `${validatorKey}:${stepIndex}`;
       if (!data.completedSteps) data.completedSteps = [];
       
@@ -105,7 +151,7 @@ app.post('/api/verify', async (req, res) => {
         const todayStr = new Date().toISOString().split('T')[0];
         data.lastActiveDate = todayStr;
         
-        await saveUserData(data);
+        await saveUserData(userId, data);
       }
       
       const levelInfo = calculateLevel(data.experiencePoints);
@@ -145,7 +191,7 @@ app.post('/api/verify', async (req, res) => {
 
   try {
     if (result.success) {
-      const data = await getUserData();
+      const data = await getUserData(userId, email, displayName, avatarUrl);
       
       // Update data if not already completed
       if (!data.completedQuests.includes(validatorKey)) {
@@ -173,7 +219,7 @@ app.post('/api/verify', async (req, res) => {
         }
         data.lastActiveDate = todayStr;
         
-        await saveUserData(data);
+        await saveUserData(userId, data);
       }
 
       const levelInfo = calculateLevel(data.experiencePoints);
@@ -199,10 +245,68 @@ app.post('/api/verify', async (req, res) => {
   }
 });
 
+// Merge Progress
+app.post('/api/merge-progress', async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Google Authentication required to merge progress.' });
+    }
+    const targetUserId = req.user.id;
+    const email = req.user.email;
+    const displayName = req.user.name;
+    const avatarUrl = req.user.avatarUrl;
+
+    const localData = await getUserData('local_user');
+    const targetData = await getUserData(targetUserId, email, displayName, avatarUrl);
+
+    // Merge completed quests
+    const mergedQuests = Array.from(new Set([...targetData.completedQuests, ...localData.completedQuests]));
+    
+    // Merge completed steps
+    const mergedSteps = Array.from(new Set([...(targetData.completedSteps || []), ...(localData.completedSteps || [])]));
+
+    // Take max of XP and streak
+    const mergedXP = Math.max(targetData.experiencePoints || 0, localData.experiencePoints || 0);
+    const mergedStreak = Math.max(targetData.streak || 0, localData.streak || 0);
+    
+    const mergedActiveDate = targetData.lastActiveDate || localData.lastActiveDate;
+
+    const mergedData = {
+      completedQuests: mergedQuests,
+      completedSteps: mergedSteps,
+      experiencePoints: mergedXP,
+      streak: mergedStreak,
+      lastActiveDate: mergedActiveDate,
+      email: email,
+      displayName: displayName,
+      avatarUrl: avatarUrl
+    };
+
+    await saveUserData(targetUserId, mergedData);
+
+    const levelInfo = calculateLevel(mergedXP);
+
+    res.json({
+      success: true,
+      message: 'Progress successfully merged from guest account!',
+      data: {
+        ...mergedData,
+        levelInfo,
+        hostOS: process.platform,
+        storageMode: getStorageMode()
+      }
+    });
+  } catch (error) {
+    console.error('Error merging progress:', error);
+    res.status(500).json({ success: false, message: 'Failed to merge progress.' });
+  }
+});
+
 // Reset progress
 app.post('/api/reset', async (req, res) => {
   try {
-    await resetUserData();
+    const userId = req.user ? req.user.id : (req.headers['x-user-id'] || 'local_user');
+    await resetUserData(userId);
     const defaultData = { completedQuests: [], completedSteps: [], experiencePoints: 0, streak: 0, lastActiveDate: null };
     res.json({
       success: true,

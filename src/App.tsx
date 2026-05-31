@@ -118,6 +118,33 @@ const defaultUserData: UserData = {
   levelInfo: { level: 1, title: 'DevOps Novice', nextLevelXp: 200 }
 };
 
+interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  avatarUrl: string;
+  loggedIn: boolean;
+  token?: string;
+}
+
+const defaultAuth: AuthUser = {
+  id: 'local_user',
+  name: 'DevOps Guest',
+  email: 'guest@local.sandbox',
+  avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=guest',
+  loggedIn: false,
+  token: ''
+};
+
+interface BadgeDefinition {
+  id: string;
+  name: string;
+  desc: string;
+  iconSvg: () => JSX.Element;
+  checkUnlocked: (data: UserData) => boolean;
+  getProgressText: (data: UserData) => string;
+}
+
 function App() {
   const [activeTab, setActiveTab] = useState<string | number>('dashboard');
   const [userData, setUserData] = useState<UserData>(() => {
@@ -144,11 +171,51 @@ function App() {
   const [quizAnswers, setQuizAnswers] = useState<Record<string, number>>({});
   const [quizCheckedModule, setQuizCheckedModule] = useState<number | null>(null);
 
+  // Authentication State
+  const [auth, setAuth] = useState<AuthUser>(() => {
+    const saved = localStorage.getItem('devops_odyssey_auth');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        // ignore
+      }
+    }
+    return defaultAuth;
+  });
+
+  const [toastBadge, setToastBadge] = useState<{ name: string; icon: string } | null>(null);
+  const [previousBadges, setPreviousBadges] = useState<string[]>([]);
+  const [showMergeBanner, setShowMergeBanner] = useState<boolean>(false);
+
+  // Dynamic headers helper
+  const getHeaders = (currentAuth?: AuthUser) => {
+    const activeAuth = currentAuth || auth;
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+    if (activeAuth.loggedIn && activeAuth.token) {
+      headers['Authorization'] = `Bearer ${activeAuth.token}`;
+    }
+    if (activeAuth.loggedIn) {
+      headers['x-user-id'] = activeAuth.id;
+      headers['x-user-email'] = activeAuth.email;
+      headers['x-user-name'] = activeAuth.name;
+      headers['x-user-avatar'] = activeAuth.avatarUrl;
+    } else {
+      headers['x-user-id'] = 'local_user';
+    }
+    return headers;
+  };
+
   // Load User Stats & Config
-  const loadStatus = async () => {
+  const loadStatus = async (currentAuth?: AuthUser) => {
     try {
       setApiError(null);
-      const res = await fetch('http://localhost:5001/api/status');
+      const activeAuth = currentAuth || auth;
+      const headers = getHeaders(activeAuth);
+
+      const res = await fetch('http://localhost:5001/api/status', { headers });
       if (!res.ok) {
         throw new Error(`Failed to contact local backend server (HTTP ${res.status}).`);
       }
@@ -164,6 +231,23 @@ function App() {
           setSelectedOS('Linux');
         }
       }
+
+      // Check if we should suggest merging guest progress
+      if (activeAuth.loggedIn) {
+        const guestSaved = localStorage.getItem('devops_odyssey_progress_guest');
+        if (guestSaved) {
+          try {
+            const guestData = JSON.parse(guestSaved);
+            const guestXp = guestData.experiencePoints || 0;
+            const userXp = data.experiencePoints || 0;
+            if (guestXp > 0 && userXp < guestXp) {
+              setShowMergeBanner(true);
+            }
+          } catch {
+            // ignore
+          }
+        }
+      }
     } catch (error: unknown) {
       console.error(error);
       setApiError('Ensure that the Express server is running. Launch via `npm run dev`.');
@@ -177,6 +261,263 @@ function App() {
     return () => window.clearTimeout(timer);
   }, []);
 
+  const isModuleComplete = (module: ModuleData) => {
+    if (!userData || module.quests.length === 0) return false;
+    return module.quests.every(q => userData.completedQuests.includes(q.validatorKey));
+  };
+
+  // Google Login callbacks and state handlers
+  const handleLogin = (user: AuthUser) => {
+    if (!auth.loggedIn) {
+      localStorage.setItem('devops_odyssey_progress_guest', JSON.stringify(userData));
+    }
+    setAuth(user);
+    localStorage.setItem('devops_odyssey_auth', JSON.stringify(user));
+    void loadStatus(user);
+  };
+
+  const handleLogout = () => {
+    setAuth(defaultAuth);
+    localStorage.removeItem('devops_odyssey_auth');
+    localStorage.removeItem('devops_odyssey_progress_guest');
+    setShowMergeBanner(false);
+    void loadStatus(defaultAuth);
+  };
+
+  const handleMergeProgress = async () => {
+    try {
+      const headers = getHeaders();
+      const res = await fetch('http://localhost:5001/api/merge-progress', {
+        method: 'POST',
+        headers
+      });
+      const result = await res.json();
+      if (result.success) {
+        setUserData(result.data);
+        localStorage.setItem('devops_odyssey_progress', JSON.stringify(result.data));
+        setShowMergeBanner(false);
+        localStorage.removeItem('devops_odyssey_progress_guest');
+        alert('Progress successfully merged from guest account!');
+      } else {
+        alert('Failed to merge progress: ' + result.message);
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error merging progress.');
+    }
+  };
+
+
+
+  // Badge list definitions
+  const badges: BadgeDefinition[] = [
+    {
+      id: 'devops_novice',
+      name: 'DevOps Novice (Çaylak)',
+      desc: 'Complete your first DevOps quest validation.',
+      iconSvg: () => (
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>
+      ),
+      checkUnlocked: (data) => (data.completedQuests || []).length >= 1,
+      getProgressText: (data) => `${(data.completedQuests || []).length >= 1 ? '1' : '0'}/1 quests completed`
+    },
+    {
+      id: 'git_maestro',
+      name: 'Git Maestro (Git Üstadı)',
+      desc: 'Unlock all quests in the Git & Version Control module.',
+      iconSvg: () => (
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="18" r="3"></circle><circle cx="6" cy="6" r="3"></circle><path d="M13 6h3a2 2 0 0 1 2 2v7"></path><line x1="6" y1="9" x2="6" y2="21"></line></svg>
+      ),
+      checkUnlocked: (data) => isModuleComplete(roadmapModules[0]),
+      getProgressText: (data) => {
+        const mod = roadmapModules[0];
+        const done = mod.quests.filter(q => data.completedQuests.includes(q.validatorKey)).length;
+        return `${done}/${mod.quests.length} quests completed`;
+      }
+    },
+    {
+      id: 'script_commander',
+      name: 'Script Commander (Komutan)',
+      desc: 'Unlock all quests in the Linux & Scripting module.',
+      iconSvg: () => (
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+      ),
+      checkUnlocked: (data) => isModuleComplete(roadmapModules[2]),
+      getProgressText: (data) => {
+        const mod = roadmapModules[2];
+        const done = mod.quests.filter(q => data.completedQuests.includes(q.validatorKey)).length;
+        return `${done}/${mod.quests.length} quests completed`;
+      }
+    },
+    {
+      id: 'container_captain',
+      name: 'Container Captain (Kaptan)',
+      desc: 'Unlock all Docker containerization quests.',
+      iconSvg: () => (
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line><line x1="12" y1="3" x2="12" y2="21"></line></svg>
+      ),
+      checkUnlocked: (data) => isModuleComplete(roadmapModules[5]),
+      getProgressText: (data) => {
+        const mod = roadmapModules[5];
+        const done = mod.quests.filter(q => data.completedQuests.includes(q.validatorKey)).length;
+        return `${done}/${mod.quests.length} quests completed`;
+      }
+    },
+    {
+      id: 'k8s_overlord',
+      name: 'Kubernetes Overlord (Hükümdar)',
+      desc: 'Master Kubernetes orchestration quests.',
+      iconSvg: () => (
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"></polygon><line x1="12" y1="22" x2="12" y2="12"></line><line x1="12" y1="12" x2="2" y2="8.5"></line><line x1="12" y1="12" x2="22" y2="8.5"></line><circle cx="12" cy="12" r="3" fill="currentColor"></circle></svg>
+      ),
+      checkUnlocked: (data) => isModuleComplete(roadmapModules[6]),
+      getProgressText: (data) => {
+        const mod = roadmapModules[6];
+        const done = mod.quests.filter(q => data.completedQuests.includes(q.validatorKey)).length;
+        return `${done}/${mod.quests.length} quests completed`;
+      }
+    },
+    {
+      id: 'pipeline_architect',
+      name: 'Pipeline Architect (Mimar)',
+      desc: 'Unlock all automation pipeline quests.',
+      iconSvg: () => (
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+      ),
+      checkUnlocked: (data) => isModuleComplete(roadmapModules[8]),
+      getProgressText: (data) => {
+        const mod = roadmapModules[8];
+        const done = mod.quests.filter(q => data.completedQuests.includes(q.validatorKey)).length;
+        return `${done}/${mod.quests.length} quests completed`;
+      }
+    },
+    {
+      id: 'streak_warrior',
+      name: 'Streak Warrior (İstikrar)',
+      desc: 'Maintain a learning streak of 3 or more active days.',
+      iconSvg: () => (
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>
+      ),
+      checkUnlocked: (data) => (data.streak || 0) >= 3,
+      getProgressText: (data) => `${data.streak || 0}/3 active days streak`
+    },
+    {
+      id: 'devops_grandmaster',
+      name: 'DevOps Grandmaster (Bilge)',
+      desc: 'Unlock all 12 modules along the DevOps Odyssey roadmap.',
+      iconSvg: () => (
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
+      ),
+      checkUnlocked: (data) => roadmapModules.every(mod => isModuleComplete(mod)),
+      getProgressText: (data) => {
+        const done = roadmapModules.filter(mod => isModuleComplete(mod)).length;
+        return `${done}/12 modules completed`;
+      }
+    }
+  ];
+
+  // Real Google Sign-in initialization and button rendering
+  useEffect(() => {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+    if (!clientId) return;
+
+    const initializeGoogleSignIn = () => {
+      if (window.google) {
+        try {
+          window.google.accounts.id.initialize({
+            client_id: clientId,
+            callback: handleGoogleCredentialResponse,
+            auto_select: false
+          });
+
+          // Attempt button rendering inside DOM elements
+          const btn = document.getElementById("google-signin-button");
+          if (btn) {
+            window.google.accounts.id.renderButton(btn, {
+              theme: "outline",
+              size: "large",
+              width: 240
+            });
+          }
+
+          const headerBtn = document.getElementById("google-signin-button-header");
+          if (headerBtn) {
+            window.google.accounts.id.renderButton(headerBtn, {
+              theme: "outline",
+              size: "medium"
+            });
+          }
+        } catch (err) {
+          console.error("Error initializing Google Sign-In:", err);
+        }
+      }
+    };
+
+    // Load GIS script if not present
+    if (!document.getElementById('google-gsi-script')) {
+      const script = document.createElement('script');
+      script.id = 'google-gsi-script';
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      script.onload = initializeGoogleSignIn;
+      document.head.appendChild(script);
+    } else {
+      // Small timeout to allow DOM node to render before renderButton is called
+      const timer = setTimeout(initializeGoogleSignIn, 50);
+      return () => clearTimeout(timer);
+    }
+
+    function handleGoogleCredentialResponse(response: any) {
+      try {
+        const base64Url = response.credential.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(
+          window.atob(base64)
+            .split('')
+            .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+            .join('')
+        );
+        const payload = JSON.parse(jsonPayload);
+        
+        const googleUser: AuthUser = {
+          id: payload.sub,
+          name: payload.name || payload.given_name || 'Google User',
+          email: payload.email,
+          avatarUrl: payload.picture || `https://api.dicebear.com/7.x/initials/svg?seed=${payload.name}`,
+          loggedIn: true,
+          token: response.credential
+        };
+        
+        handleLogin(googleUser);
+      } catch (err) {
+        console.error('Error decoding Google credentials token:', err);
+      }
+    }
+  }, [auth.loggedIn, activeTab]);
+
+  // Check for badge unlocks
+  useEffect(() => {
+    if (!userData) return;
+    const currentUnlocked = badges
+      .filter(b => b.checkUnlocked(userData))
+      .map(b => b.id);
+    
+    if (previousBadges.length > 0) {
+      const newlyUnlocked = currentUnlocked.filter(id => !previousBadges.includes(id));
+      if (newlyUnlocked.length > 0) {
+        const firstNewId = newlyUnlocked[0];
+        const newBadge = badges.find(b => b.id === firstNewId);
+        if (newBadge) {
+          setToastBadge({ name: newBadge.name, icon: newBadge.id });
+          setTimeout(() => setToastBadge(null), 4000);
+        }
+      }
+    }
+    
+    setPreviousBadges(currentUnlocked);
+  }, [userData]);
+
   const totalQuestsCount = roadmapModules.reduce((acc, mod) => acc + mod.quests.length, 0);
   const completedCount = userData?.completedQuests.length || 0;
   const progressPercent = totalQuestsCount > 0 ? Math.round((completedCount / totalQuestsCount) * 100) : 0;
@@ -188,7 +529,7 @@ function App() {
     try {
       const res = await fetch('http://localhost:5001/api/verify', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders(),
         body: JSON.stringify({
           validatorKey: quest.validatorKey,
           difficulty: quest.difficulty,
@@ -261,7 +602,10 @@ function App() {
     setActiveQuest(null);
     setVerifyResult(null);
     try {
-      const res = await fetch('http://localhost:5001/api/reset', { method: 'POST' });
+      const res = await fetch('http://localhost:5001/api/reset', {
+        method: 'POST',
+        headers: getHeaders()
+      });
       const result = await res.json();
       if (result.success) {
         setUserData(result.data);
@@ -346,10 +690,7 @@ function App() {
     return Math.round((completed / total) * 100);
   };
 
-  const isModuleComplete = (module: ModuleData) => {
-    if (!userData || module.quests.length === 0) return false;
-    return module.quests.every(q => userData.completedQuests.includes(q.validatorKey));
-  };
+
 
   // If we are inside Focused Learning Lab mode
   if (activeQuest && userData) {
@@ -397,7 +738,7 @@ function App() {
       try {
         const res = await fetch('http://localhost:5001/api/verify', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getHeaders(),
           body: JSON.stringify({
             validatorKey: activeQuest.validatorKey,
             difficulty: activeQuest.difficulty,
@@ -583,6 +924,25 @@ function App() {
             </div>
           </div>
 
+          <div 
+            className={`nav-item ${activeTab === 'profile' ? 'active' : ''}`}
+            onClick={() => { setActiveTab('profile'); setVerifyResult(null); }}
+          >
+            <div className="nav-item-left" style={{ gap: '10px' }}>
+              {auth.loggedIn ? (
+                <img 
+                  src={auth.avatarUrl} 
+                  alt="Avatar" 
+                  className="google-account-avatar" 
+                  style={{ width: '18px', height: '18px', borderRadius: '50%', objectFit: 'cover', margin: 0 }} 
+                />
+              ) : (
+                <Icons.Users />
+              )}
+              <span>{auth.loggedIn ? auth.name : 'Profilim'}</span>
+            </div>
+          </div>
+
           <div className="nav-section-title">Roadmap Paths</div>
           
           {roadmapModules.map((mod) => {
@@ -639,34 +999,54 @@ function App() {
               {activeTab === 'dashboard' && "Command Center"}
               {activeTab === 'resources' && "Resource Hub"}
               {activeTab === 'burger' && "DevOps Burger Map"}
+              {activeTab === 'profile' && "User Profile & Achievements"}
               {typeof activeTab === 'number' && roadmapModules.find(m => m.id === activeTab)?.title}
             </h1>
             <p className="header-subtitle">
               {activeTab === 'dashboard' && "Track your progress, levels, database syncing, and complete system quests."}
               {activeTab === 'resources' && "A curated collection of industry books, definitions, and web tools."}
               {activeTab === 'burger' && "A delicious layout breaking down DevOps stack layers logically."}
+              {activeTab === 'profile' && "Manage your synced cloud profiles, view your DevOps experience stats, and check your badges."}
               {typeof activeTab === 'number' && `Module ${activeTab} of 12 • Hands-on Local Sandbox Verification`}
             </p>
           </div>
 
           {userData && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div className="profile-pill">
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontWeight: 700, fontSize: 14 }}>{userData.levelInfo.title}</div>
-                  <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
-                    Level {userData.levelInfo.level} • {userData.experiencePoints} XP
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                {!auth.loggedIn && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div id="google-signin-button-header"></div>
+                    {!import.meta.env.VITE_GOOGLE_CLIENT_ID && (
+                      <span style={{ fontSize: '9px', color: 'var(--error)', width: '130px', textAlign: 'center', lineHeight: 1.2 }}>
+                        Set VITE_GOOGLE_CLIENT_ID in .env
+                      </span>
+                    )}
                   </div>
-                  <div className="xp-bar-container">
-                    <div 
-                      className="xp-bar-fill" 
-                      style={{ width: `${Math.min(100, (userData.experiencePoints / userData.levelInfo.nextLevelXp) * 100)}%` }}
-                    />
+                )}
+                
+                <div 
+                  className="profile-pill" 
+                  onClick={() => setActiveTab('profile')} 
+                  style={{ cursor: 'pointer', display: 'flex', gap: '12px', alignItems: 'center' }}
+                  title="Click to view profile and achievements"
+                >
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>{userData.levelInfo?.title || 'DevOps Novice'}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+                      Level {userData.levelInfo?.level || 1} • {userData.experiencePoints || 0} XP
+                    </div>
+                    <div className="xp-bar-container">
+                      <div 
+                        className="xp-bar-fill" 
+                        style={{ width: `${Math.min(100, ((userData.experiencePoints || 0) / (userData.levelInfo?.nextLevelXp || 200)) * 100)}%` }}
+                      />
+                    </div>
                   </div>
-                </div>
-                <div className="streak-counter">
-                  <Icons.Flame />
-                  <span>{userData.streak} Day Streak</span>
+                  <div className="streak-counter" style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                    <Icons.Flame />
+                    <span>{userData.streak || 0} Days</span>
+                  </div>
                 </div>
               </div>
 
@@ -921,6 +1301,152 @@ function App() {
               </div>
             </div>
 
+          </div>
+        )}
+
+        {/* ------------------- PROFILE VIEW ------------------- */}
+        {activeTab === 'profile' && (
+          <div className="profile-layout-container" style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+            {/* Merge Progress Banner */}
+            {showMergeBanner && (
+              <div className="google-merge-banner">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div style={{ fontSize: '24px' }}>🎁</div>
+                  <div>
+                    <h4 style={{ fontWeight: 700, fontSize: '15px' }}>Merge Local Progress?</h4>
+                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                      We detected existing guest progress. Would you like to merge it into your Google account?
+                    </p>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button className="btn btn-primary" onClick={handleMergeProgress} style={{ padding: '8px 16px', fontSize: '12px' }}>
+                    Merge Stats
+                  </button>
+                  <button className="btn btn-secondary" onClick={() => setShowMergeBanner(false)} style={{ padding: '8px 16px', fontSize: '12px' }}>
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="profile-container">
+              {/* LEFT CARD: AUTHENTICATION DETAILS */}
+              <div className="glass-panel profile-card-left">
+                {auth.loggedIn ? (
+                  <>
+                    <img src={auth.avatarUrl} alt={auth.name} className="profile-avatar-large" />
+                    <h2 className="profile-name-large">{auth.name}</h2>
+                    <p className="profile-email-large">{auth.email}</p>
+                    
+                    <button className="btn btn-secondary" onClick={handleLogout} style={{ width: '100%', gap: '8px' }}>
+                      Sign Out (Çıkış Yap)
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className="profile-avatar-large" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.03)', fontSize: '48px', color: 'var(--text-muted)' }}>
+                      👤
+                    </div>
+                    <h2 className="profile-name-large">Guest Account</h2>
+                    <p className="profile-email-large">Your progress is saved locally. Sign in with Google to sync to the cloud database.</p>
+                    
+                    <div id="google-signin-button" style={{ display: 'flex', justifyContent: 'center', width: '100%' }}></div>
+                    {!import.meta.env.VITE_GOOGLE_CLIENT_ID && (
+                      <div className="verify-result error" style={{ fontSize: '11px', padding: '10px', marginTop: '12px', width: '100%', boxSizing: 'border-box', textAlign: 'left', margin: '12px 0 0' }}>
+                        <strong>VITE_GOOGLE_CLIENT_ID missing!</strong>
+                        <p style={{ margin: '4px 0 0', fontSize: '10px', lineHeight: 1.3 }}>
+                          Please add VITE_GOOGLE_CLIENT_ID to your .env file to enable Sign In.
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                <div className="profile-sync-status" style={{ width: '100%', marginTop: '32px', boxSizing: 'border-box' }}>
+                  <div style={{
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    background: userData.storageMode?.includes('PostgreSQL') ? 'var(--success)' : 'var(--primary)'
+                  }} />
+                  <div style={{ textAlign: 'left', fontSize: '11px', lineHeight: 1.4 }}>
+                    <strong style={{ display: 'block', color: 'var(--text-primary)' }}>Storage Engine</strong>
+                    <span style={{ color: 'var(--text-secondary)' }}>{userData.storageMode || 'Local Database'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* RIGHT CARD: DETAILED PROGRESS STATS & ANALYTICS */}
+              <div className="glass-panel" style={{ padding: '40px' }}>
+                <h2 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '24px' }}>DevOps Journey Overview</h2>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginBottom: '40px' }}>
+                  <div className="glass-panel" style={{ padding: '20px', textAlign: 'center', background: 'rgba(255,255,255,0.01)' }}>
+                    <span style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>XP Points</span>
+                    <h3 style={{ fontSize: '28px', fontWeight: 800, margin: '8px 0', color: 'var(--primary-light)' }}>{userData.experiencePoints}</h3>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Level {userData.levelInfo?.level}</span>
+                  </div>
+                  <div className="glass-panel" style={{ padding: '20px', textAlign: 'center', background: 'rgba(255,255,255,0.01)' }}>
+                    <span style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Quests Done</span>
+                    <h3 style={{ fontSize: '28px', fontWeight: 800, margin: '8px 0', color: 'var(--secondary)' }}>{completedCount} / {totalQuestsCount}</h3>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{progressPercent}% Complete</span>
+                  </div>
+                  <div className="glass-panel" style={{ padding: '20px', textAlign: 'center', background: 'rgba(255,255,255,0.01)' }}>
+                    <span style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Active Streak</span>
+                    <h3 style={{ fontSize: '28px', fontWeight: 800, margin: '8px 0', color: '#f59e0b' }}>{userData.streak} Days</h3>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Flame multiplier</span>
+                  </div>
+                </div>
+
+                <h3 style={{ fontSize: '16px', fontWeight: 800, borderBottom: '1px solid var(--border-light)', paddingBottom: '10px', marginBottom: '20px' }}>
+                  Roadmap Path Stats
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                  {categories.map((cat, idx) => {
+                    const progress = getCategoryProgress(cat.moduleIds);
+                    return (
+                      <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                          <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{cat.name}</span>
+                          <span style={{ fontWeight: 700, color: cat.color }}>{progress}%</span>
+                        </div>
+                        <div style={{ height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${progress}%`, background: cat.color, borderRadius: '10px' }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* BADGES & ACHIEVEMENTS EXPANSION SECTION */}
+            <div className="badges-section glass-panel" style={{ padding: '40px', marginTop: '32px' }}>
+              <h3 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '6px' }}>Badges & Achievements</h3>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '24px' }}>
+                Complete roadmap quests, finish theory modules, and keep your learning streak alive to unlock dynamic DevOps badges.
+              </p>
+
+              <div className="badges-grid">
+                {badges.map((badge) => {
+                  const unlocked = badge.checkUnlocked(userData);
+                  return (
+                    <div key={badge.id} className={`badge-card ${unlocked ? 'unlocked' : 'locked'}`}>
+                      <div className="badge-icon-wrapper">
+                        {badge.iconSvg()}
+                      </div>
+                      <div className="badge-name">{badge.name}</div>
+                      <div className="badge-desc">{badge.desc}</div>
+                      <div className="badge-status-pill">{unlocked ? 'Unlocked' : 'Locked'}</div>
+                      <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '8px' }}>
+                        {badge.getProgressText(userData)}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         )}
 
@@ -1438,6 +1964,19 @@ function App() {
           </div>
         )}
       </main>
+
+
+
+      {/* Toast Notification */}
+      {toastBadge && (
+        <div className="badge-toast">
+          <div style={{ fontSize: '32px' }}>🏆</div>
+          <div>
+            <div style={{ fontSize: '11px', color: 'var(--primary-light)', fontWeight: 700, textTransform: 'uppercase' }}>Achievement Unlocked!</div>
+            <div style={{ fontWeight: 800, fontSize: '14px', color: 'white', marginTop: '2px' }}>{toastBadge.name}</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
