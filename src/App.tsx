@@ -216,6 +216,14 @@ function App() {
       const headers = getHeaders(activeAuth);
 
       const res = await fetch('http://localhost:5001/api/status', { headers });
+      if (res.status === 401) {
+        setAuth(defaultAuth);
+        localStorage.removeItem('devops_odyssey_auth');
+        localStorage.removeItem('devops_odyssey_progress_guest');
+        setShowMergeBanner(false);
+        void loadStatus(defaultAuth);
+        return;
+      }
       if (!res.ok) {
         throw new Error(`Failed to contact local backend server (HTTP ${res.status}).`);
       }
