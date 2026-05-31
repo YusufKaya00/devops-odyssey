@@ -179,21 +179,111 @@ export async function getUserData(userId, email = null, displayName = null, avat
     try {
       // Ensure user exists or update their profile info
       const checkRes = await dbPool.query('SELECT * FROM users WHERE id = $1', [userId]);
-      if (checkRes.rows.length === 0) {
+      const userExists = checkRes.rows.length > 0;
+
+      // Load local backup file if it exists
+      const safeId = String(userId).replace(/[^a-zA-Z0-9_-]/g, '_');
+      const userFilePath = path.join(process.cwd(), `userdata_${safeId}.json`);
+      let localData = null;
+      if (fs.existsSync(userFilePath)) {
+        try {
+          const fileContent = fs.readFileSync(userFilePath, 'utf8');
+          localData = JSON.parse(fileContent);
+        } catch (err) {
+          console.error('Error reading local backup during database sync:', err);
+        }
+      }
+
+      if (!userExists) {
+        // User is new to the database, initialize with local backup data if available
+        const initXp = localData ? (localData.experiencePoints || 0) : 0;
+        const initStreak = localData ? (localData.streak || 0) : 0;
+        const initActiveDate = localData ? (localData.lastActiveDate || null) : null;
+
         await dbPool.query(
           `INSERT INTO users (id, experience_points, streak, last_active_date, email, display_name, avatar_url)
-           VALUES ($1, 0, 0, NULL, $2, $3, $4)`,
-          [userId, email, displayName, avatarUrl]
+           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+          [userId, initXp, initStreak, initActiveDate, email, displayName, avatarUrl]
         );
-      } else if (email || displayName || avatarUrl) {
-        await dbPool.query(
-          `UPDATE users 
-           SET email = COALESCE($2, email), 
-               display_name = COALESCE($3, display_name), 
-               avatar_url = COALESCE($4, avatar_url)
-           WHERE id = $1`,
-          [userId, email, displayName, avatarUrl]
-        );
+
+        if (localData) {
+          if (localData.completedQuests) {
+            for (const questKey of localData.completedQuests) {
+              await dbPool.query(
+                `INSERT INTO completed_quests (user_id, quest_key)
+                 VALUES ($1, $2) ON CONFLICT (user_id, quest_key) DO NOTHING`,
+                [userId, questKey]
+              );
+            }
+          }
+          if (localData.completedSteps) {
+            for (const stepStr of localData.completedSteps) {
+              const [questKey, stepIdxStr] = stepStr.split(':');
+              const stepIndex = parseInt(stepIdxStr, 10);
+              if (questKey && !isNaN(stepIndex)) {
+                await dbPool.query(
+                  `INSERT INTO completed_steps (user_id, quest_key, step_index)
+                   VALUES ($1, $2, $3) ON CONFLICT (user_id, quest_key, step_index) DO NOTHING`,
+                  [userId, questKey, stepIndex]
+                );
+              }
+            }
+          }
+          console.log(`Synced local backup userdata_${safeId}.json to PostgreSQL database for new user.`);
+        }
+      } else {
+        // User exists in database. Update profile metadata
+        if (email || displayName || avatarUrl) {
+          await dbPool.query(
+            `UPDATE users 
+             SET email = COALESCE($2, email), 
+                 display_name = COALESCE($3, display_name), 
+                 avatar_url = COALESCE($4, avatar_url)
+             WHERE id = $1`,
+            [userId, email, displayName, avatarUrl]
+          );
+        }
+
+        // Check if local backup has more progress than the database, and if so, merge it!
+        const dbQuestsRes = await dbPool.query('SELECT quest_key FROM completed_quests WHERE user_id = $1', [userId]);
+        const dbQuests = dbQuestsRes.rows.map(r => r.quest_key);
+
+        if (localData && localData.completedQuests && localData.completedQuests.some(q => !dbQuests.includes(q))) {
+          console.log(`Local backup has quests not in database. Merging local backup to database for user ${userId}.`);
+          
+          const dbUserRes = await dbPool.query('SELECT experience_points, streak, last_active_date FROM users WHERE id = $1', [userId]);
+          const dbUser = dbUserRes.rows[0];
+          const mergedXp = Math.max(dbUser.experience_points || 0, localData.experiencePoints || 0);
+          const mergedStreak = Math.max(dbUser.streak || 0, localData.streak || 0);
+          const mergedActiveDate = dbUser.last_active_date || localData.lastActiveDate;
+
+          await dbPool.query(
+            `UPDATE users SET experience_points = $2, streak = $3, last_active_date = $4 WHERE id = $1`,
+            [userId, mergedXp, mergedStreak, mergedActiveDate]
+          );
+
+          for (const questKey of localData.completedQuests) {
+            await dbPool.query(
+              `INSERT INTO completed_quests (user_id, quest_key)
+               VALUES ($1, $2) ON CONFLICT (user_id, quest_key) DO NOTHING`,
+              [userId, questKey]
+            );
+          }
+
+          if (localData.completedSteps) {
+            for (const stepStr of localData.completedSteps) {
+              const [questKey, stepIdxStr] = stepStr.split(':');
+              const stepIndex = parseInt(stepIdxStr, 10);
+              if (questKey && !isNaN(stepIndex)) {
+                await dbPool.query(
+                  `INSERT INTO completed_steps (user_id, quest_key, step_index)
+                   VALUES ($1, $2, $3) ON CONFLICT (user_id, quest_key, step_index) DO NOTHING`,
+                  [userId, questKey, stepIndex]
+                );
+              }
+            }
+          }
+        }
       }
 
       const userRes = await dbPool.query('SELECT * FROM users WHERE id = $1', [userId]);
