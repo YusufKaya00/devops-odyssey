@@ -20,6 +20,9 @@ if (process.env.DATABASE_URL) {
         rejectUnauthorized: false // Required for Neon / Supabase in some environments
       }
     });
+    dbPool.on('error', (err) => {
+      console.error('Unexpected error on idle PostgreSQL client:', err.message);
+    });
     isPostgres = true;
     console.log('Database Engine: PostgreSQL configured.');
   } catch (error) {
