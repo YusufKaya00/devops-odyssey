@@ -14,8 +14,19 @@ let isPostgres = false;
 // Initialize PostgreSQL if connection string exists
 if (process.env.DATABASE_URL) {
   try {
+    let connectionString = process.env.DATABASE_URL;
+    try {
+      const url = new URL(connectionString);
+      if (url.searchParams.has('sslmode')) {
+        url.searchParams.delete('sslmode');
+        connectionString = url.toString();
+      }
+    } catch (urlError) {
+      // Fallback if not a standard URL format
+    }
+
     dbPool = new Pool({
-      connectionString: process.env.DATABASE_URL,
+      connectionString,
       ssl: {
         rejectUnauthorized: false // Required for Neon / Supabase in some environments
       }
