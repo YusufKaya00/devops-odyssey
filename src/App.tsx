@@ -313,7 +313,7 @@ function App() {
   const badges: BadgeDefinition[] = [
     {
       id: 'devops_novice',
-      name: 'DevOps Novice (Çaylak)',
+      name: 'DevOps Novice',
       desc: 'Complete your first DevOps quest validation.',
       iconSvg: () => (
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>
@@ -323,7 +323,7 @@ function App() {
     },
     {
       id: 'git_maestro',
-      name: 'Git Maestro (Git Üstadı)',
+      name: 'Git Maestro',
       desc: 'Unlock all quests in the Git & Version Control module.',
       iconSvg: () => (
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="18" r="3"></circle><circle cx="6" cy="6" r="3"></circle><path d="M13 6h3a2 2 0 0 1 2 2v7"></path><line x1="6" y1="9" x2="6" y2="21"></line></svg>
@@ -337,7 +337,7 @@ function App() {
     },
     {
       id: 'script_commander',
-      name: 'Script Commander (Komutan)',
+      name: 'Script Commander',
       desc: 'Unlock all quests in the Linux & Scripting module.',
       iconSvg: () => (
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
@@ -351,7 +351,7 @@ function App() {
     },
     {
       id: 'container_captain',
-      name: 'Container Captain (Kaptan)',
+      name: 'Container Captain',
       desc: 'Unlock all Docker containerization quests.',
       iconSvg: () => (
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line><line x1="12" y1="3" x2="12" y2="21"></line></svg>
@@ -365,7 +365,7 @@ function App() {
     },
     {
       id: 'k8s_overlord',
-      name: 'Kubernetes Overlord (Hükümdar)',
+      name: 'Kubernetes Overlord',
       desc: 'Master Kubernetes orchestration quests.',
       iconSvg: () => (
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"></polygon><line x1="12" y1="22" x2="12" y2="12"></line><line x1="12" y1="12" x2="2" y2="8.5"></line><line x1="12" y1="12" x2="22" y2="8.5"></line><circle cx="12" cy="12" r="3" fill="currentColor"></circle></svg>
@@ -379,7 +379,7 @@ function App() {
     },
     {
       id: 'pipeline_architect',
-      name: 'Pipeline Architect (Mimar)',
+      name: 'Pipeline Architect',
       desc: 'Unlock all automation pipeline quests.',
       iconSvg: () => (
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
@@ -393,7 +393,7 @@ function App() {
     },
     {
       id: 'streak_warrior',
-      name: 'Streak Warrior (İstikrar)',
+      name: 'Streak Warrior',
       desc: 'Maintain a learning streak of 3 or more active days.',
       iconSvg: () => (
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>
@@ -403,7 +403,7 @@ function App() {
     },
     {
       id: 'devops_grandmaster',
-      name: 'DevOps Grandmaster (Bilge)',
+      name: 'DevOps Grandmaster',
       desc: 'Unlock all 12 modules along the DevOps Odyssey roadmap.',
       iconSvg: () => (
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
