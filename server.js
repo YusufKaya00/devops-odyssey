@@ -256,8 +256,28 @@ app.post('/api/merge-progress', async (req, res) => {
     const displayName = req.user.name;
     const avatarUrl = req.user.avatarUrl;
 
-    const localData = await getUserData('local_user');
+    let localData = await getUserData('local_user');
     const targetData = await getUserData(targetUserId, email, displayName, avatarUrl);
+
+    // Also merge from the local JSON file on disk (userdata_local_user.json) to cover mode switches
+    const localUserFilePath = path.join(process.cwd(), 'userdata_local_user.json');
+    if (fs.existsSync(localUserFilePath)) {
+      try {
+        const fileContent = fs.readFileSync(localUserFilePath, 'utf8');
+        const fileData = JSON.parse(fileContent);
+        if (fileData) {
+          localData = {
+            completedQuests: Array.from(new Set([...(localData.completedQuests || []), ...(fileData.completedQuests || [])])),
+            completedSteps: Array.from(new Set([...(localData.completedSteps || []), ...(fileData.completedSteps || [])])),
+            experiencePoints: Math.max(localData.experiencePoints || 0, fileData.experiencePoints || 0),
+            streak: Math.max(localData.streak || 0, fileData.streak || 0),
+            lastActiveDate: localData.lastActiveDate || fileData.lastActiveDate || null
+          };
+        }
+      } catch (err) {
+        console.error('Failed to read or parse local backup userdata_local_user.json during merge:', err);
+      }
+    }
 
     // Merge completed quests
     const mergedQuests = Array.from(new Set([...targetData.completedQuests, ...localData.completedQuests]));

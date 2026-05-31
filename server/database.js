@@ -34,8 +34,9 @@ if (process.env.DATABASE_URL) {
 // Ensure database tables exist in PostgreSQL
 async function ensureTables() {
   if (!isPostgres) return;
-  const client = await dbPool.connect();
+  let client;
   try {
+    client = await dbPool.connect();
     // Users table
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
@@ -82,10 +83,12 @@ async function ensureTables() {
     `, [USER_ID]);
 
   } catch (e) {
-    console.error('Error creating database tables:', e.message);
+    console.error('Error connecting to database or creating tables:', e.message);
     isPostgres = false; // Fall back to local JSON if tables fail
   } finally {
-    client.release();
+    if (client) {
+      client.release();
+    }
   }
 }
 
@@ -158,7 +161,7 @@ function writeLocalFile(userId, data) {
 // Get User Data (Dual Mode)
 export async function getUserData(userId, email = null, displayName = null, avatarUrl = null) {
   if (!userId) userId = 'local_user';
-  if (isPostgres) {
+  if (isPostgres && userId !== 'local_user') {
     try {
       // Ensure user exists or update their profile info
       const checkRes = await dbPool.query('SELECT * FROM users WHERE id = $1', [userId]);
@@ -222,7 +225,7 @@ export async function getUserData(userId, email = null, displayName = null, avat
 // Save User Data (Dual Mode)
 export async function saveUserData(userId, data) {
   if (!userId) userId = 'local_user';
-  if (isPostgres) {
+  if (isPostgres && userId !== 'local_user') {
     const client = await dbPool.connect();
     try {
       await client.query('BEGIN');
@@ -285,7 +288,7 @@ export async function saveUserData(userId, data) {
 // Reset User Data (Dual Mode)
 export async function resetUserData(userId) {
   if (!userId) userId = 'local_user';
-  if (isPostgres) {
+  if (isPostgres && userId !== 'local_user') {
     try {
       await dbPool.query('DELETE FROM completed_quests WHERE user_id = $1', [userId]);
       await dbPool.query('DELETE FROM completed_steps WHERE user_id = $1', [userId]);
