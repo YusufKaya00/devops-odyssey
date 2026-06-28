@@ -232,6 +232,7 @@ function App() {
   const [notesText, setNotesText] = useState<string>('');
   const [savingStatus, setSavingStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [notesHeight, setNotesHeight] = useState<string>(() => localStorage.getItem('personal_notes_height') || '100px');
+  const [isMaximized, setIsMaximized] = useState<boolean>(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Dynamic headers helper
@@ -1228,6 +1229,26 @@ function App() {
                   <span style={{ fontSize: '11px', color: savingStatus === 'saving' ? '#60a5fa' : savingStatus === 'saved' ? '#34d399' : 'var(--text-muted)' }}>
                     {savingStatus === 'saving' ? 'Saving...' : savingStatus === 'saved' ? 'Saved' : 'Auto-saved'}
                   </span>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setIsMaximized(true); }}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'var(--text-muted)',
+                      cursor: 'pointer',
+                      fontSize: '13px',
+                      padding: '2px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'color 0.2s'
+                    }}
+                    title="Maximize Notes"
+                    onMouseEnter={(e) => e.currentTarget.style.color = '#f8fafc'}
+                    onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
+                  >
+                    ⛶
+                  </button>
                   <span style={{ transform: showNotes ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', fontSize: '10px', color: 'var(--text-muted)' }}>
                     ▼
                   </span>
@@ -1281,6 +1302,88 @@ function App() {
               activeStepIndexOverride={isQuestAlreadyCompleted ? activeStepIdx : undefined}
               onStepChange={(newIdx) => setReviewedStepIdx(newIdx)}
             />
+
+            {/* Maximized Notes Modal Overlay */}
+            {isMaximized && (
+              <div style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100vw',
+                height: '100vh',
+                background: 'rgba(0, 0, 0, 0.75)',
+                backdropFilter: 'blur(10px)',
+                zIndex: 9999,
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                padding: '40px'
+              }} onClick={() => setIsMaximized(false)}>
+                <div className="personal-notes-panel glass-panel" style={{
+                  width: '100%',
+                  maxWidth: '800px',
+                  height: '80%',
+                  maxHeight: '600px',
+                  borderRadius: '16px',
+                  border: '1px solid rgba(139, 92, 246, 0.3)',
+                  boxShadow: '0 20px 50px rgba(0, 0, 0, 0.6)',
+                  overflow: 'hidden',
+                  background: 'rgba(15, 23, 42, 0.95)',
+                  display: 'flex',
+                  flexDirection: 'column'
+                }} onClick={(e) => e.stopPropagation()}>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '16px 24px',
+                    background: 'rgba(30, 41, 59, 0.8)',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.05)'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '15px', fontWeight: 700, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        📝 Personal Notes (Expanded View)
+                        <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '4px' }}>
+                          Step {activeStepIdx + 1}
+                        </span>
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      <span style={{ fontSize: '12px', color: savingStatus === 'saving' ? '#60a5fa' : savingStatus === 'saved' ? '#34d399' : 'var(--text-muted)' }}>
+                        {savingStatus === 'saving' ? 'Saving...' : savingStatus === 'saved' ? 'Saved' : 'Auto-saved'}
+                      </span>
+                      <button 
+                        className="btn btn-secondary" 
+                        onClick={() => setIsMaximized(false)}
+                        style={{ padding: '6px 14px', fontSize: '12px', cursor: 'pointer', borderRadius: '6px', height: 'auto', display: 'inline-block' }}
+                      >
+                        ✕ Close
+                      </button>
+                    </div>
+                  </div>
+                  <div style={{ flex: 1, padding: '20px', background: '#090d16' }}>
+                    <textarea
+                      value={notesText}
+                      onChange={(e) => handleNotesChange(e.target.value)}
+                      placeholder="Type your notes or reference commands here... (Step-specific, auto-saved)"
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        background: 'transparent',
+                        border: 'none',
+                        outline: 'none',
+                        color: '#f8fafc',
+                        fontFamily: 'inherit',
+                        fontSize: '15px',
+                        lineHeight: '1.6',
+                        resize: 'none'
+                      }}
+                      autoFocus
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           </div>
         </div>
