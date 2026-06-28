@@ -113,11 +113,6 @@ export const TerminalSimulator: React.FC<TerminalSimulatorProps> = ({
   const [historyIndex, setHistoryIndex] = useState<number>(-1);
   const [simState, setSimState] = useState<SimState>(() => createInitialState(validatorKey));
 
-  const [showNotes, setShowNotes] = useState<boolean>(false);
-  const [notesText, setNotesText] = useState<string>('');
-  const [savingStatus, setSavingStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
   const logsEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -146,40 +141,6 @@ export const TerminalSimulator: React.FC<TerminalSimulatorProps> = ({
   useEffect(() => {
     logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [logs]);
-
-  // Sync personal notes text when step index or props change
-  useEffect(() => {
-    const currentNote = stepNotes?.[`${validatorKey}:${activeStepIdx}`] || '';
-    setNotesText(currentNote);
-    setSavingStatus('idle');
-  }, [activeStepIdx, validatorKey, stepNotes]);
-
-  // Auto-save step notes with debouncing
-  const handleNotesChange = (val: string) => {
-    setNotesText(val);
-    setSavingStatus('saving');
-
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-
-    saveTimeoutRef.current = setTimeout(() => {
-      if (onSaveNotes) {
-        onSaveNotes(validatorKey, activeStepIdx, val);
-      }
-      setSavingStatus('saved');
-      setTimeout(() => setSavingStatus('idle'), 1500);
-    }, 800);
-  };
-
-  // Clean up save timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-    };
-  }, []);
 
   // Generate short SHA
   const genSHA = () => Math.random().toString(16).substring(2, 9);
@@ -934,73 +895,15 @@ export const TerminalSimulator: React.FC<TerminalSimulatorProps> = ({
 
   return (
     <div className="terminal-simulator-container" onClick={handleTerminalClick}>
-      <div className="terminal-simulator-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingRight: '12px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div className="terminal-buttons">
-            <span className="term-btn term-close"></span>
-            <span className="term-btn term-minimize"></span>
-            <span className="term-btn term-expand"></span>
-          </div>
-          <div className="terminal-title">DevOps Simulated Shell: /{simState.currentDir} ({simState.git.initialized ? simState.git.currentBranch : 'no-git'})</div>
+      <div className="terminal-simulator-header">
+        <div className="terminal-buttons">
+          <span className="term-btn term-close"></span>
+          <span className="term-btn term-minimize"></span>
+          <span className="term-btn term-expand"></span>
         </div>
-        <button 
-          className="btn btn-secondary"
-          onClick={(e) => { e.stopPropagation(); setShowNotes(!showNotes); }}
-          style={{ 
-            padding: '3px 8px', 
-            fontSize: '11px', 
-            height: '24px', 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '4px',
-            background: showNotes ? 'var(--primary)' : 'rgba(255, 255, 255, 0.1)',
-            borderColor: showNotes ? 'var(--primary)' : 'rgba(255, 255, 255, 0.1)',
-            color: 'white',
-            cursor: 'pointer',
-            borderRadius: '4px'
-          }}
-        >
-          📝 {showNotes ? 'Hide Notes' : 'Personal Notes'}
-        </button>
+        <div className="terminal-title">DevOps Simulated Shell: /{simState.currentDir} ({simState.git.initialized ? simState.git.currentBranch : 'no-git'})</div>
+        <div style={{ width: '40px' }} />
       </div>
-
-      {showNotes && (
-        <div className="terminal-notes-panel" style={{
-          background: '#1e293b',
-          borderBottom: '1px solid var(--border-light)',
-          padding: '12px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '6px'
-        }} onClick={(e) => e.stopPropagation()}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)' }}>
-              Personal Notes for Step {activeStepIdx + 1} ({interactiveSteps[activeStepIdx]?.title || 'Lab'})
-            </span>
-            <span style={{ fontSize: '10px', color: savingStatus === 'saving' ? '#60a5fa' : savingStatus === 'saved' ? '#34d399' : 'var(--text-muted)' }}>
-              {savingStatus === 'saving' ? 'Saving...' : savingStatus === 'saved' ? 'Saved' : 'Auto-saved'}
-            </span>
-          </div>
-          <textarea
-            value={notesText}
-            onChange={(e) => handleNotesChange(e.target.value)}
-            placeholder="Type your notes or reference commands here... (Step-specific, auto-saved)"
-            style={{
-              width: '100%',
-              height: '70px',
-              background: '#0f172a',
-              border: '1px solid var(--border-light)',
-              borderRadius: '4px',
-              padding: '6px 10px',
-              fontSize: '12px',
-              color: '#f8fafc',
-              fontFamily: 'Inter, sans-serif',
-              resize: 'none',
-              outline: 'none'
-            }}
-          />
-        </div>
-      )}
 
       <div className="terminal-body">
         {logs.map((log, idx) => (

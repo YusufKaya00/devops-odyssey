@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { ReactElement } from 'react';
 import {
   roadmapModules,
@@ -226,6 +226,13 @@ function App() {
     header: false,
     profile: false
   });
+
+  // Step Notes panel state
+  const [showNotes, setShowNotes] = useState<boolean>(() => localStorage.getItem('personal_notes_visible') !== 'false');
+  const [notesText, setNotesText] = useState<string>('');
+  const [savingStatus, setSavingStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [notesHeight, setNotesHeight] = useState<string>(() => localStorage.getItem('personal_notes_height') || '100px');
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Dynamic headers helper
   const getHeaders = (currentAuth?: AuthUser) => {
@@ -827,6 +834,75 @@ function App() {
     }
   };
 
+  // Sync notes text whenever quest, step, or user progress changes
+  useEffect(() => {
+    if (!activeQuest || !userData) {
+      setNotesText('');
+      return;
+    }
+    
+    const steps = activeQuest.interactiveSteps || [];
+    const isQuestAlreadyCompleted = userData.completedQuests.includes(activeQuest.validatorKey);
+    let stepIdx = 0;
+    if (isQuestAlreadyCompleted) {
+      stepIdx = Math.min(reviewedStepIdx ?? 0, steps.length > 0 ? steps.length - 1 : 0);
+    } else {
+      for (let i = 0; i < steps.length; i++) {
+        if (!userData.completedSteps?.includes(`${activeQuest.validatorKey}:${i}`)) {
+          stepIdx = i;
+          break;
+        }
+        stepIdx = i + 1;
+      }
+    }
+    
+    const currentNote = userData.stepNotes?.[`${activeQuest.validatorKey}:${stepIdx}`] || '';
+    setNotesText(currentNote);
+    setSavingStatus('idle');
+  }, [activeQuest, reviewedStepIdx, userData?.completedSteps, userData?.stepNotes]);
+
+  // Auto-save step notes with debouncing
+  const handleNotesChange = (val: string) => {
+    if (!activeQuest || !userData) return;
+    setNotesText(val);
+    setSavingStatus('saving');
+
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    // Calculate current step index
+    const steps = activeQuest.interactiveSteps || [];
+    const isQuestAlreadyCompleted = userData.completedQuests.includes(activeQuest.validatorKey);
+    let stepIdx = 0;
+    if (isQuestAlreadyCompleted) {
+      stepIdx = Math.min(reviewedStepIdx ?? 0, steps.length > 0 ? steps.length - 1 : 0);
+    } else {
+      for (let i = 0; i < steps.length; i++) {
+        if (!userData.completedSteps?.includes(`${activeQuest.validatorKey}:${i}`)) {
+          stepIdx = i;
+          break;
+        }
+        stepIdx = i + 1;
+      }
+    }
+
+    saveTimeoutRef.current = setTimeout(async () => {
+      await handleSaveNotes(activeQuest.validatorKey, stepIdx, val);
+      setSavingStatus('saved');
+      setTimeout(() => setSavingStatus('idle'), 1500);
+    }, 800);
+  };
+
+  // Clean up save timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Module Status
   const getModuleStatus = (module: ModuleData) => {
     if (!userData) return 'NOT_STARTED';
@@ -1109,7 +1185,85 @@ function App() {
           </div>
 
           {/* RIGHT PANEL: INTERACTIVE TERMINAL SIMULATOR */}
-          <div className="focused-lab-right-panel">
+          <div className="focused-lab-right-panel" style={{ justifyContent: 'flex-start', paddingTop: '32px' }}>
+            {/* Notes Panel outside Terminal Simulator but above it */}
+            <div className="personal-notes-panel glass-panel" style={{
+              marginBottom: '16px',
+              borderRadius: '12px',
+              border: '1px solid rgba(139, 92, 246, 0.2)',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
+              overflow: 'hidden',
+              background: 'rgba(15, 23, 42, 0.65)',
+              backdropFilter: 'blur(8px)',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '10px 16px',
+                background: 'rgba(30, 41, 59, 0.5)',
+                borderBottom: showNotes ? '1px solid rgba(255, 255, 255, 0.05)' : 'none',
+                cursor: 'pointer'
+              }} onClick={() => {
+                const nextVal = !showNotes;
+                setShowNotes(nextVal);
+                localStorage.setItem('personal_notes_visible', String(nextVal));
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    📝 Personal Notes
+                    <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.06)', padding: '2px 6px', borderRadius: '4px' }}>
+                      Step {activeStepIdx + 1}
+                    </span>
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ fontSize: '11px', color: savingStatus === 'saving' ? '#60a5fa' : savingStatus === 'saved' ? '#34d399' : 'var(--text-muted)' }}>
+                    {savingStatus === 'saving' ? 'Saving...' : savingStatus === 'saved' ? 'Saved' : 'Auto-saved'}
+                  </span>
+                  <span style={{ transform: showNotes ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', fontSize: '10px', color: 'var(--text-muted)' }}>
+                    ▼
+                  </span>
+                </div>
+              </div>
+
+              {showNotes && (
+                <div style={{ 
+                  padding: '12px',
+                  resize: 'vertical',
+                  overflow: 'auto',
+                  height: notesHeight,
+                  minHeight: '80px',
+                  maxHeight: '300px'
+                }} onMouseUp={(e) => {
+                  const height = e.currentTarget.style.height;
+                  if (height) {
+                    setNotesHeight(height);
+                    localStorage.setItem('personal_notes_height', height);
+                  }
+                }}>
+                  <textarea
+                    value={notesText}
+                    onChange={(e) => handleNotesChange(e.target.value)}
+                    placeholder="Keep step-specific notes, cheat sheets, or commands here..."
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      background: 'transparent',
+                      border: 'none',
+                      outline: 'none',
+                      color: '#e2e8f0',
+                      fontFamily: 'inherit',
+                      fontSize: '13px',
+                      lineHeight: '1.5',
+                      resize: 'none'
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
             <TerminalSimulator
               key={`${activeQuest.validatorKey}-${isQuestAlreadyCompleted ? activeStepIdx : 'progress'}`}
               questId={activeQuest.title}
@@ -1120,8 +1274,6 @@ function App() {
               isReviewMode={isQuestAlreadyCompleted}
               activeStepIndexOverride={isQuestAlreadyCompleted ? activeStepIdx : undefined}
               onStepChange={(newIdx) => setReviewedStepIdx(newIdx)}
-              stepNotes={userData.stepNotes}
-              onSaveNotes={handleSaveNotes}
             />
           </div>
           </div>
@@ -1870,8 +2022,6 @@ function App() {
                             interactiveSteps={activeQuest.interactiveSteps || []}
                             completedSteps={userData?.completedSteps || []}
                             onStepComplete={() => undefined}
-                            stepNotes={userData?.stepNotes}
-                            onSaveNotes={handleSaveNotes}
                           />
                         </div>
                       ) : (
