@@ -741,8 +741,16 @@ function App() {
         message: result.message
       });
       if (result.success && result.data) {
-        setUserData(result.data);
-        localStorage.setItem('devops_odyssey_progress', JSON.stringify(result.data));
+        const mergedNotes = {
+          ...(result.data.stepNotes || {}),
+          ...(userData?.stepNotes || {})
+        };
+        const updatedWithNotes = {
+          ...result.data,
+          stepNotes: mergedNotes
+        };
+        setUserData(updatedWithNotes);
+        localStorage.setItem('devops_odyssey_progress', JSON.stringify(updatedWithNotes));
       }
     } catch {
       // Offline fallback: simulated verification automatically succeeds in local mode
@@ -1042,8 +1050,16 @@ function App() {
         });
         const result = await res.json();
         if (result.success && result.data) {
-          setUserData(result.data);
-          localStorage.setItem('devops_odyssey_progress', JSON.stringify(result.data));
+          const mergedNotes = {
+            ...(result.data.stepNotes || {}),
+            ...(userData?.stepNotes || {})
+          };
+          const updatedWithNotes = {
+            ...result.data,
+            stepNotes: mergedNotes
+          };
+          setUserData(updatedWithNotes);
+          localStorage.setItem('devops_odyssey_progress', JSON.stringify(updatedWithNotes));
         }
       } catch (e) {
         console.error('Failed to sync sub-step progress', e);
