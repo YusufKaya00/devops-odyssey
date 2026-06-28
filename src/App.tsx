@@ -270,9 +270,10 @@ function App() {
     return () => window.clearTimeout(timer);
   }, []);
 
-  const isModuleComplete = (module: ModuleData) => {
-    if (!userData || module.quests.length === 0) return false;
-    return module.quests.every(q => userData.completedQuests.includes(q.validatorKey));
+  const isModuleComplete = (module: ModuleData, data?: UserData) => {
+    const d = data || userData;
+    if (!d || module.quests.length === 0) return false;
+    return module.quests.every(q => d.completedQuests.includes(q.validatorKey));
   };
 
   // Google Login callbacks and state handlers
@@ -337,7 +338,7 @@ function App() {
       iconSvg: () => (
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="18" r="3"></circle><circle cx="6" cy="6" r="3"></circle><path d="M13 6h3a2 2 0 0 1 2 2v7"></path><line x1="6" y1="9" x2="6" y2="21"></line></svg>
       ),
-      checkUnlocked: (data) => isModuleComplete(roadmapModules[0]),
+      checkUnlocked: (data) => isModuleComplete(roadmapModules[0], data),
       getProgressText: (data) => {
         const mod = roadmapModules[0];
         const done = mod.quests.filter(q => data.completedQuests.includes(q.validatorKey)).length;
@@ -351,7 +352,7 @@ function App() {
       iconSvg: () => (
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
       ),
-      checkUnlocked: (data) => isModuleComplete(roadmapModules[2]),
+      checkUnlocked: (data) => isModuleComplete(roadmapModules[2], data),
       getProgressText: (data) => {
         const mod = roadmapModules[2];
         const done = mod.quests.filter(q => data.completedQuests.includes(q.validatorKey)).length;
@@ -365,7 +366,7 @@ function App() {
       iconSvg: () => (
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line><line x1="12" y1="3" x2="12" y2="21"></line></svg>
       ),
-      checkUnlocked: (data) => isModuleComplete(roadmapModules[5]),
+      checkUnlocked: (data) => isModuleComplete(roadmapModules[5], data),
       getProgressText: (data) => {
         const mod = roadmapModules[5];
         const done = mod.quests.filter(q => data.completedQuests.includes(q.validatorKey)).length;
@@ -379,7 +380,7 @@ function App() {
       iconSvg: () => (
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"></polygon><line x1="12" y1="22" x2="12" y2="12"></line><line x1="12" y1="12" x2="2" y2="8.5"></line><line x1="12" y1="12" x2="22" y2="8.5"></line><circle cx="12" cy="12" r="3" fill="currentColor"></circle></svg>
       ),
-      checkUnlocked: (data) => isModuleComplete(roadmapModules[6]),
+      checkUnlocked: (data) => isModuleComplete(roadmapModules[6], data),
       getProgressText: (data) => {
         const mod = roadmapModules[6];
         const done = mod.quests.filter(q => data.completedQuests.includes(q.validatorKey)).length;
@@ -393,9 +394,107 @@ function App() {
       iconSvg: () => (
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
       ),
-      checkUnlocked: (data) => isModuleComplete(roadmapModules[8]),
+      checkUnlocked: (data) => isModuleComplete(roadmapModules[8], data),
       getProgressText: (data) => {
         const mod = roadmapModules[8];
+        const done = mod.quests.filter(q => data.completedQuests.includes(q.validatorKey)).length;
+        return `${done}/${mod.quests.length} quests completed`;
+      }
+    },
+    {
+      id: 'code_crafter',
+      name: 'Code Crafter',
+      desc: 'Complete all quests in the Programming Language module.',
+      iconSvg: () => (
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline><line x1="14" y1="4" x2="10" y2="20"></line></svg>
+      ),
+      checkUnlocked: (data) => isModuleComplete(roadmapModules[1], data),
+      getProgressText: (data) => {
+        const mod = roadmapModules[1];
+        const done = mod.quests.filter(q => data.completedQuests.includes(q.validatorKey)).length;
+        return `${done}/${mod.quests.length} quests completed`;
+      }
+    },
+    {
+      id: 'network_sentinel',
+      name: 'Network Sentinel',
+      desc: 'Complete all quests in the Networking & Security module.',
+      iconSvg: () => (
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+      ),
+      checkUnlocked: (data) => isModuleComplete(roadmapModules[3], data),
+      getProgressText: (data) => {
+        const mod = roadmapModules[3];
+        const done = mod.quests.filter(q => data.completedQuests.includes(q.validatorKey)).length;
+        return `${done}/${mod.quests.length} quests completed`;
+      }
+    },
+    {
+      id: 'server_guardian',
+      name: 'Server Guardian',
+      desc: 'Complete all quests in the Server Management module.',
+      iconSvg: () => (
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+      ),
+      checkUnlocked: (data) => isModuleComplete(roadmapModules[4], data),
+      getProgressText: (data) => {
+        const mod = roadmapModules[4];
+        const done = mod.quests.filter(q => data.completedQuests.includes(q.validatorKey)).length;
+        return `${done}/${mod.quests.length} quests completed`;
+      }
+    },
+    {
+      id: 'infra_engineer',
+      name: 'Infra Engineer',
+      desc: 'Complete all quests in the Infrastructure as Code module.',
+      iconSvg: () => (
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+      ),
+      checkUnlocked: (data) => isModuleComplete(roadmapModules[7], data),
+      getProgressText: (data) => {
+        const mod = roadmapModules[7];
+        const done = mod.quests.filter(q => data.completedQuests.includes(q.validatorKey)).length;
+        return `${done}/${mod.quests.length} quests completed`;
+      }
+    },
+    {
+      id: 'observability_ace',
+      name: 'Observability Ace',
+      desc: 'Complete all quests in the Monitoring & Observability module.',
+      iconSvg: () => (
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+      ),
+      checkUnlocked: (data) => isModuleComplete(roadmapModules[9], data),
+      getProgressText: (data) => {
+        const mod = roadmapModules[9];
+        const done = mod.quests.filter(q => data.completedQuests.includes(q.validatorKey)).length;
+        return `${done}/${mod.quests.length} quests completed`;
+      }
+    },
+    {
+      id: 'cloud_navigator',
+      name: 'Cloud Navigator',
+      desc: 'Complete all quests in the Cloud Providers module.',
+      iconSvg: () => (
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>
+      ),
+      checkUnlocked: (data) => isModuleComplete(roadmapModules[10], data),
+      getProgressText: (data) => {
+        const mod = roadmapModules[10];
+        const done = mod.quests.filter(q => data.completedQuests.includes(q.validatorKey)).length;
+        return `${done}/${mod.quests.length} quests completed`;
+      }
+    },
+    {
+      id: 'practice_master',
+      name: 'Practice Master',
+      desc: 'Complete all quests in the Software Engineering Practices module.',
+      iconSvg: () => (
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+      ),
+      checkUnlocked: (data) => isModuleComplete(roadmapModules[11], data),
+      getProgressText: (data) => {
+        const mod = roadmapModules[11];
         const done = mod.quests.filter(q => data.completedQuests.includes(q.validatorKey)).length;
         return `${done}/${mod.quests.length} quests completed`;
       }
@@ -417,9 +516,9 @@ function App() {
       iconSvg: () => (
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
       ),
-      checkUnlocked: (data) => roadmapModules.every(mod => isModuleComplete(mod)),
+      checkUnlocked: (data) => roadmapModules.every(mod => isModuleComplete(mod, data)),
       getProgressText: (data) => {
-        const done = roadmapModules.filter(mod => isModuleComplete(mod)).length;
+        const done = roadmapModules.filter(mod => isModuleComplete(mod, data)).length;
         return `${done}/12 modules completed`;
       }
     }
@@ -1012,7 +1111,7 @@ function App() {
                   <span>{mod.id}. {mod.title.split(' ')[0]}</span>
                 </div>
                 <span className={`module-badge ${status === 'COMPLETED' ? 'completed' : ''}`}>
-                  {status === 'COMPLETED' ? 'Done' : status === 'IN_PROGRESS' ? '1/2' : '0%'}
+                  {status === 'COMPLETED' ? 'Done' : status === 'IN_PROGRESS' ? `${mod.quests.filter(q => userData.completedQuests.includes(q.validatorKey)).length}/${mod.quests.length}` : '0%'}
                 </span>
               </div>
             );
