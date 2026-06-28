@@ -156,6 +156,18 @@ const defaultAuth: AuthUser = {
   token: ''
 };
 
+const GoogleFallbackButton = ({ compact = false }: { compact?: boolean }) => (
+  <button
+    className={`google-fallback-button ${compact ? 'compact' : 'profile'}`}
+    type="button"
+    onClick={() => window.google?.accounts.id.prompt()}
+    aria-label="Sign in with Google"
+  >
+    <span className="google-mark" aria-hidden="true">G</span>
+    <span>Sign in with Google</span>
+  </button>
+);
+
 interface BadgeDefinition {
   id: string;
   name: string;
@@ -208,7 +220,10 @@ function App() {
   const [toastBadge, setToastBadge] = useState<{ name: string; icon: string } | null>(null);
   const [previousBadges, setPreviousBadges] = useState<string[]>([]);
   const [showMergeBanner, setShowMergeBanner] = useState<boolean>(false);
-  const [googleButtonReady, setGoogleButtonReady] = useState<boolean>(false);
+  const [googleButtonReady, setGoogleButtonReady] = useState<{ header: boolean; profile: boolean }>({
+    header: false,
+    profile: false
+  });
 
   // Dynamic headers helper
   const getHeaders = (currentAuth?: AuthUser) => {
@@ -603,7 +618,7 @@ function App() {
               size: "large",
               width: 240
             });
-            setGoogleButtonReady(true);
+            setGoogleButtonReady((ready) => ({ ...ready, profile: true }));
           }
 
           const headerBtn = document.getElementById("google-signin-button-header");
@@ -612,7 +627,7 @@ function App() {
               theme: "outline",
               size: "medium"
             });
-            setGoogleButtonReady(true);
+            setGoogleButtonReady((ready) => ({ ...ready, header: true }));
           }
         } catch (err) {
           console.error("Error initializing Google Sign-In:", err);
@@ -1211,10 +1226,13 @@ function App() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 {!auth.loggedIn && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <div id="google-signin-button-header"></div>
+                  <div className="google-signin-slot header-slot">
+                    <div id="google-signin-button-header" className="google-rendered-button"></div>
+                    {import.meta.env.VITE_GOOGLE_CLIENT_ID && !googleButtonReady.header && (
+                      <GoogleFallbackButton compact />
+                    )}
                     {!import.meta.env.VITE_GOOGLE_CLIENT_ID && (
-                      <span style={{ fontSize: '9px', color: 'var(--error)', width: '130px', textAlign: 'center', lineHeight: 1.2 }}>
+                      <span className="google-config-warning">
                         Set VITE_GOOGLE_CLIENT_ID in .env
                       </span>
                     )}
@@ -1547,16 +1565,11 @@ function App() {
                     <h2 className="profile-name-large">Guest Account</h2>
                     <p className="profile-email-large">Your progress is saved locally. Sign in with Google to sync to the cloud database.</p>
                     
-                    <div id="google-signin-button" style={{ display: 'flex', justifyContent: 'center', width: '100%' }}></div>
-                    {import.meta.env.VITE_GOOGLE_CLIENT_ID && !googleButtonReady && (
-                      <button
-                        className="btn btn-primary"
-                        type="button"
-                        onClick={() => window.google?.accounts.id.prompt()}
-                        style={{ width: '100%', justifyContent: 'center' }}
-                      >
-                        Sign in with Google
-                      </button>
+                    <div className="google-signin-slot profile-slot">
+                      <div id="google-signin-button" className="google-rendered-button"></div>
+                    </div>
+                    {import.meta.env.VITE_GOOGLE_CLIENT_ID && !googleButtonReady.profile && (
+                      <GoogleFallbackButton />
                     )}
                     {!import.meta.env.VITE_GOOGLE_CLIENT_ID && (
                       <div className="verify-result error" style={{ fontSize: '11px', padding: '10px', marginTop: '12px', width: '100%', boxSizing: 'border-box', textAlign: 'left', margin: '12px 0 0' }}>
