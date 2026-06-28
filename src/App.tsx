@@ -292,18 +292,24 @@ function App() {
           ]));
           const mergedXp = Math.max(data.experiencePoints || 0, localData.experiencePoints || 0);
           const mergedStreak = Math.max(data.streak || 0, localData.streak || 0);
+          const mergedNotes = {
+            ...(data.stepNotes || {}),
+            ...(localData.stepNotes || {})
+          };
 
           // Only use merged data if localStorage actually has more progress
           if (mergedQuests.length > (data.completedQuests || []).length ||
               mergedSteps.length > (data.completedSteps || []).length ||
-              mergedXp > (data.experiencePoints || 0)) {
+              mergedXp > (data.experiencePoints || 0) ||
+              Object.keys(mergedNotes).length > Object.keys(data.stepNotes || {}).length) {
             mergedData = {
               ...data,
               completedQuests: mergedQuests,
               completedSteps: mergedSteps,
               experiencePoints: mergedXp,
               streak: mergedStreak,
-              lastActiveDate: data.lastActiveDate || localData.lastActiveDate
+              lastActiveDate: data.lastActiveDate || localData.lastActiveDate,
+              stepNotes: mergedNotes
             };
           }
         } catch {
