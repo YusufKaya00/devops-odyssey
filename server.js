@@ -11,6 +11,7 @@ import {
   resetUserData,
   getStorageMode
 } from './server/database.js';
+import { calculateLevel } from './server/progress.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -49,15 +50,6 @@ const XP_VALUES = {
   Intermediate: 200,
   Advanced: 300
 };
-
-// XP to Level Mapper
-function calculateLevel(xp) {
-  if (xp < 200) return { level: 1, title: 'DevOps Novice', nextLevelXp: 200 };
-  if (xp < 500) return { level: 2, title: 'Linux Apprentice', nextLevelXp: 500 };
-  if (xp < 1000) return { level: 3, title: 'Docker Operator', nextLevelXp: 1000 };
-  if (xp < 1800) return { level: 4, title: 'Kubernetes Engineer', nextLevelXp: 1800 };
-  return { level: 5, title: 'Cloud Architect', nextLevelXp: 3000 };
-}
 
 // Middleware to authenticate Google ID token via Google Tokeninfo API
 async function authenticateGoogleToken(req, res, next) {

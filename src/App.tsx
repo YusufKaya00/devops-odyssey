@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import type { ReactElement } from 'react';
 import {
   roadmapModules,
   devopsBooks,
@@ -6,12 +7,31 @@ import {
 } from './data/roadmapData';
 import type { ModuleData, Quest } from './data/roadmapData';
 import { TerminalSimulator } from './components/TerminalSimulator';
+import { calculateLevel } from './progress';
+import type { LevelInfo } from './progress';
 
+interface GoogleCredentialResponse {
+  credential: string;
+}
 
-interface LevelInfo {
-  level: number;
-  title: string;
-  nextLevelXp: number;
+interface GoogleAccountsId {
+  initialize: (config: {
+    client_id: string;
+    callback: (response: GoogleCredentialResponse) => void;
+    auto_select?: boolean;
+  }) => void;
+  renderButton: (parent: HTMLElement, options: Record<string, string | number>) => void;
+  prompt: () => void;
+}
+
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: GoogleAccountsId;
+      };
+    };
+  }
 }
 
 interface UserData {
@@ -115,7 +135,7 @@ const defaultUserData: UserData = {
   experiencePoints: 0,
   streak: 0,
   lastActiveDate: null,
-  levelInfo: { level: 1, title: 'DevOps Novice', nextLevelXp: 200 }
+  levelInfo: calculateLevel(0)
 };
 
 interface AuthUser {
@@ -140,7 +160,7 @@ interface BadgeDefinition {
   id: string;
   name: string;
   desc: string;
-  iconSvg: () => JSX.Element;
+  iconSvg: () => ReactElement;
   checkUnlocked: (data: UserData) => boolean;
   getProgressText: (data: UserData) => string;
 }
@@ -188,6 +208,7 @@ function App() {
   const [toastBadge, setToastBadge] = useState<{ name: string; icon: string } | null>(null);
   const [previousBadges, setPreviousBadges] = useState<string[]>([]);
   const [showMergeBanner, setShowMergeBanner] = useState<boolean>(false);
+  const [googleButtonReady, setGoogleButtonReady] = useState<boolean>(false);
 
   // Dynamic headers helper
   const getHeaders = (currentAuth?: AuthUser) => {
@@ -582,6 +603,7 @@ function App() {
               size: "large",
               width: 240
             });
+            setGoogleButtonReady(true);
           }
 
           const headerBtn = document.getElementById("google-signin-button-header");
@@ -590,6 +612,7 @@ function App() {
               theme: "outline",
               size: "medium"
             });
+            setGoogleButtonReady(true);
           }
         } catch (err) {
           console.error("Error initializing Google Sign-In:", err);
@@ -612,7 +635,7 @@ function App() {
       return () => clearTimeout(timer);
     }
 
-    function handleGoogleCredentialResponse(response: any) {
+    function handleGoogleCredentialResponse(response: GoogleCredentialResponse) {
       try {
         const base64Url = response.credential.split('.')[1];
         const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -653,6 +676,7 @@ function App() {
         const firstNewId = newlyUnlocked[0];
         const newBadge = badges.find(b => b.id === firstNewId);
         if (newBadge) {
+          // eslint-disable-next-line react-hooks/set-state-in-effect
           setToastBadge({ name: newBadge.name, icon: newBadge.id });
           setTimeout(() => setToastBadge(null), 4000);
         }
@@ -693,20 +717,13 @@ function App() {
       // Offline fallback: simulated verification automatically succeeds in local mode
       if (options?.isSimulated) {
         const updatedQuests = [...(userData.completedQuests || [])];
-        if (!updatedQuests.includes(quest.validatorKey)) {
+        const isNewQuest = !updatedQuests.includes(quest.validatorKey);
+        if (isNewQuest) {
           updatedQuests.push(quest.validatorKey);
         }
         const xpReward = quest.difficulty === 'Beginner' ? 100 : quest.difficulty === 'Intermediate' ? 200 : 300;
-        const newXp = (userData.experiencePoints || 0) + xpReward;
+        const newXp = (userData.experiencePoints || 0) + (isNewQuest ? xpReward : 0);
         
-        const calculateLevel = (xp: number) => {
-          if (xp < 200) return { level: 1, title: 'DevOps Novice', nextLevelXp: 200 };
-          if (xp < 500) return { level: 2, title: 'Linux Apprentice', nextLevelXp: 500 };
-          if (xp < 1000) return { level: 3, title: 'Docker Operator', nextLevelXp: 1000 };
-          if (xp < 1800) return { level: 4, title: 'Kubernetes Engineer', nextLevelXp: 1800 };
-          return { level: 5, title: 'Cloud Architect', nextLevelXp: 3000 };
-        };
-
         const updatedUser = {
           ...userData,
           completedQuests: updatedQuests,
@@ -740,7 +757,7 @@ function App() {
       experiencePoints: 0,
       streak: 0,
       lastActiveDate: null,
-      levelInfo: { level: 1, title: 'DevOps Novice', nextLevelXp: 200 }
+      levelInfo: calculateLevel(0)
     };
     setUserData(freshUser);
     setActiveQuest(null);
@@ -868,15 +885,7 @@ function App() {
       const currentSteps = userData.completedSteps || [];
       const updatedSteps = currentSteps.includes(stepKey) ? currentSteps : [...currentSteps, stepKey];
       
-      const newXp = (userData.experiencePoints || 0) + 20; // 20 XP per step (matches backend)
-      
-      const calculateLevel = (xp: number) => {
-        if (xp < 200) return { level: 1, title: 'DevOps Novice', nextLevelXp: 200 };
-        if (xp < 500) return { level: 2, title: 'Linux Apprentice', nextLevelXp: 500 };
-        if (xp < 1000) return { level: 3, title: 'Docker Operator', nextLevelXp: 1000 };
-        if (xp < 1800) return { level: 4, title: 'Kubernetes Engineer', nextLevelXp: 1800 };
-        return { level: 5, title: 'Cloud Architect', nextLevelXp: 3000 };
-      };
+      const newXp = (userData.experiencePoints || 0) + (currentSteps.includes(stepKey) ? 0 : 20);
 
       const updatedUser = {
         ...userData,
@@ -920,7 +929,7 @@ function App() {
         <header className="focused-lab-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <button className="btn btn-secondary" onClick={() => { setActiveQuest(null); setReviewedStepIdx(null); }} style={{ padding: '8px 16px' }}>
-              ← Exit Lab (Geri Dön)
+              Exit Lab
             </button>
             <div>
               <h2 style={{ fontSize: '18px', fontWeight: 800 }}>{activeQuest.title}</h2>
@@ -1126,7 +1135,7 @@ function App() {
               ) : (
                 <Icons.Users />
               )}
-              <span>{auth.loggedIn ? auth.name : 'Profilim'}</span>
+              <span>{auth.loggedIn ? auth.name : 'Profile'}</span>
             </div>
           </div>
 
@@ -1154,7 +1163,7 @@ function App() {
         </nav>
 
         <div className="sidebar-footer">
-          <button className="btn btn-secondary" onClick={loadStatus} style={{ width: '100%' }}>
+          <button className="btn btn-secondary" onClick={() => void loadStatus()} style={{ width: '100%' }}>
             <Icons.Refresh /> Refresh Local Check
           </button>
           <button 
@@ -1317,7 +1326,7 @@ function App() {
                     textTransform: 'uppercase',
                     letterSpacing: '0.5px'
                   }}>
-                    Next Recommended Target (Sıradaki Öneri)
+                    Next Recommended Target
                   </span>
                   
                   {nextRecommended ? (
@@ -1393,10 +1402,10 @@ function App() {
               </div>
             </div>
 
-            {/* ROW 3: WHAT I KNOW (KAZANILAN BECERİLER) */}
+            {/* ROW 3: SKILLS ACQUIRED */}
             <div className="glass-panel" style={{ padding: '32px' }}>
               <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '8px', letterSpacing: '-0.3px' }}>
-                Skills Acquired (Neleri Biliyorum)
+                Skills Acquired
               </h3>
               <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '24px' }}>
                 Your earned badges based on verified sandbox configurations.
@@ -1527,7 +1536,7 @@ function App() {
                     <p className="profile-email-large">{auth.email}</p>
                     
                     <button className="btn btn-secondary" onClick={handleLogout} style={{ width: '100%', gap: '8px' }}>
-                      Sign Out (Çıkış Yap)
+                      Sign Out
                     </button>
                   </>
                 ) : (
@@ -1539,6 +1548,16 @@ function App() {
                     <p className="profile-email-large">Your progress is saved locally. Sign in with Google to sync to the cloud database.</p>
                     
                     <div id="google-signin-button" style={{ display: 'flex', justifyContent: 'center', width: '100%' }}></div>
+                    {import.meta.env.VITE_GOOGLE_CLIENT_ID && !googleButtonReady && (
+                      <button
+                        className="btn btn-primary"
+                        type="button"
+                        onClick={() => window.google?.accounts.id.prompt()}
+                        style={{ width: '100%', justifyContent: 'center' }}
+                      >
+                        Sign in with Google
+                      </button>
+                    )}
                     {!import.meta.env.VITE_GOOGLE_CLIENT_ID && (
                       <div className="verify-result error" style={{ fontSize: '11px', padding: '10px', marginTop: '12px', width: '100%', boxSizing: 'border-box', textAlign: 'left', margin: '12px 0 0' }}>
                         <strong>VITE_GOOGLE_CLIENT_ID missing!</strong>
