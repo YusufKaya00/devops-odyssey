@@ -43,6 +43,7 @@ interface UserData {
   levelInfo: LevelInfo;
   hostOS?: string;
   storageMode?: string;
+  stepNotes?: Record<string, string>;
 }
 
 // Inline SVG Icon components for zero-dependency high-fidelity renders
@@ -135,7 +136,8 @@ const defaultUserData: UserData = {
   experiencePoints: 0,
   streak: 0,
   lastActiveDate: null,
-  levelInfo: calculateLevel(0)
+  levelInfo: calculateLevel(0),
+  stepNotes: {}
 };
 
 interface AuthUser {
@@ -772,7 +774,8 @@ function App() {
       experiencePoints: 0,
       streak: 0,
       lastActiveDate: null,
-      levelInfo: calculateLevel(0)
+      levelInfo: calculateLevel(0),
+      stepNotes: {}
     };
     setUserData(freshUser);
     setActiveQuest(null);
@@ -790,6 +793,37 @@ function App() {
       }
     } catch {
       console.warn('Backend reset offline.');
+    }
+  };
+
+  const handleSaveNotes = async (questKey: string, stepIndex: number, notesText: string) => {
+    if (!userData) return;
+    
+    const updatedNotes = {
+      ...(userData.stepNotes || {}),
+      [`${questKey}:${stepIndex}`]: notesText
+    };
+
+    const updatedUser = {
+      ...userData,
+      stepNotes: updatedNotes
+    };
+
+    setUserData(updatedUser);
+    localStorage.setItem('devops_odyssey_progress', JSON.stringify(updatedUser));
+
+    try {
+      await fetch('http://localhost:5001/api/notes', {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({
+          validatorKey: questKey,
+          stepIndex,
+          notes: notesText
+        })
+      });
+    } catch (e) {
+      console.error('Failed to save note to backend:', e);
     }
   };
 
@@ -1086,6 +1120,8 @@ function App() {
               isReviewMode={isQuestAlreadyCompleted}
               activeStepIndexOverride={isQuestAlreadyCompleted ? activeStepIdx : undefined}
               onStepChange={(newIdx) => setReviewedStepIdx(newIdx)}
+              stepNotes={userData.stepNotes}
+              onSaveNotes={handleSaveNotes}
             />
           </div>
           </div>
@@ -1834,6 +1870,8 @@ function App() {
                             interactiveSteps={activeQuest.interactiveSteps || []}
                             completedSteps={userData?.completedSteps || []}
                             onStepComplete={() => undefined}
+                            stepNotes={userData?.stepNotes}
+                            onSaveNotes={handleSaveNotes}
                           />
                         </div>
                       ) : (

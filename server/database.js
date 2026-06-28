@@ -89,6 +89,18 @@ async function ensureTables() {
       );
     `);
 
+    // Step notes table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS step_notes (
+        user_id VARCHAR(50) REFERENCES users(id) ON DELETE CASCADE,
+        quest_key VARCHAR(100) NOT NULL,
+        step_index INT NOT NULL,
+        notes TEXT,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (user_id, quest_key, step_index)
+      );
+    `);
+
     // Insert default user if not exists
     await client.query(`
       INSERT INTO users (id, experience_points, streak, last_active_date)
@@ -137,7 +149,8 @@ function readLocalFile(userId) {
           lastActiveDate: null,
           email: null,
           displayName: null,
-          avatarUrl: null
+          avatarUrl: null,
+          stepNotes: {}
         };
         fs.writeFileSync(userFilePath, JSON.stringify(defaultData, null, 2));
         return defaultData;
@@ -153,11 +166,12 @@ function readLocalFile(userId) {
       lastActiveDate: parsed.lastActiveDate || null,
       email: parsed.email || null,
       displayName: parsed.displayName || null,
-      avatarUrl: parsed.avatarUrl || null
+      avatarUrl: parsed.avatarUrl || null,
+      stepNotes: parsed.stepNotes || {}
     };
   } catch (e) {
     console.error(`Error reading local userdata for ${userId}:`, e);
-    return { completedQuests: [], completedSteps: [], experiencePoints: 0, streak: 0, lastActiveDate: null };
+    return { completedQuests: [], completedSteps: [], experiencePoints: 0, streak: 0, lastActiveDate: null, stepNotes: {} };
   }
 }
 
@@ -229,6 +243,19 @@ export async function getUserData(userId, email = null, displayName = null, avat
               }
             }
           }
+          if (localData.stepNotes) {
+            for (const [key, noteText] of Object.entries(localData.stepNotes)) {
+              const [questKey, stepIdxStr] = key.split(':');
+              const stepIndex = parseInt(stepIdxStr, 10);
+              if (questKey && !isNaN(stepIndex)) {
+                await dbPool.query(
+                  `INSERT INTO step_notes (user_id, quest_key, step_index, notes)
+                   VALUES ($1, $2, $3, $4) ON CONFLICT (user_id, quest_key, step_index) DO UPDATE SET notes = EXCLUDED.notes`,
+                  [userId, questKey, stepIndex, noteText]
+                );
+              }
+            }
+          }
           console.log(`Synced local backup userdata_${safeId}.json to PostgreSQL database for new user.`);
         }
       } else {
@@ -283,17 +310,35 @@ export async function getUserData(userId, email = null, displayName = null, avat
               }
             }
           }
+          if (localData.stepNotes) {
+            for (const [key, noteText] of Object.entries(localData.stepNotes)) {
+              const [questKey, stepIdxStr] = key.split(':');
+              const stepIndex = parseInt(stepIdxStr, 10);
+              if (questKey && !isNaN(stepIndex)) {
+                await dbPool.query(
+                  `INSERT INTO step_notes (user_id, quest_key, step_index, notes)
+                   VALUES ($1, $2, $3, $4) ON CONFLICT (user_id, quest_key, step_index) DO UPDATE SET notes = EXCLUDED.notes`,
+                  [userId, questKey, stepIndex, noteText]
+                );
+              }
+            }
+          }
         }
       }
 
       const userRes = await dbPool.query('SELECT * FROM users WHERE id = $1', [userId]);
       const questsRes = await dbPool.query('SELECT quest_key FROM completed_quests WHERE user_id = $1', [userId]);
       const stepsRes = await dbPool.query('SELECT quest_key, step_index FROM completed_steps WHERE user_id = $1', [userId]);
+      const notesRes = await dbPool.query('SELECT quest_key, step_index, notes FROM step_notes WHERE user_id = $1', [userId]);
       
       const user = userRes.rows[0];
       const completedQuests = questsRes.rows.map(r => r.quest_key);
       const completedSteps = stepsRes.rows.map(r => `${r.quest_key}:${r.step_index}`);
-
+      const stepNotes = {};
+      notesRes.rows.forEach(r => {
+        stepNotes[`${r.quest_key}:${r.step_index}`] = r.notes;
+      });
+ 
       return {
         completedQuests,
         completedSteps,
@@ -303,6 +348,7 @@ export async function getUserData(userId, email = null, displayName = null, avat
         email: user ? user.email : null,
         displayName: user ? user.display_name : null,
         avatarUrl: user ? user.avatar_url : null,
+        stepNotes,
         storageMode: 'PostgreSQL Cloud Database'
       };
     } catch (e) {
@@ -366,8 +412,24 @@ export async function saveUserData(userId, data) {
         }
       }
 
+      // Sync step notes
+      if (data.stepNotes) {
+        for (const [key, noteText] of Object.entries(data.stepNotes)) {
+          const [questKey, stepIdxStr] = key.split(':');
+          const stepIndex = parseInt(stepIdxStr, 10);
+          if (questKey && !isNaN(stepIndex)) {
+            await client.query(`
+              INSERT INTO step_notes (user_id, quest_key, step_index, notes)
+              VALUES ($1, $2, $3, $4)
+              ON CONFLICT (user_id, quest_key, step_index) 
+              DO UPDATE SET notes = EXCLUDED.notes
+            `, [userId, questKey, stepIndex, noteText]);
+          }
+        }
+      }
+ 
       await client.query('COMMIT');
-
+ 
       // Always write local backup even when PostgreSQL succeeds,
       // so offline fallback has up-to-date data if DB goes down later
       writeLocalFile(userId, {
@@ -378,7 +440,8 @@ export async function saveUserData(userId, data) {
         lastActiveDate: data.lastActiveDate,
         email: data.email || null,
         displayName: data.displayName || null,
-        avatarUrl: data.avatarUrl || null
+        avatarUrl: data.avatarUrl || null,
+        stepNotes: data.stepNotes || {}
       });
       return;
     } catch (e) {
@@ -398,7 +461,8 @@ export async function saveUserData(userId, data) {
     lastActiveDate: data.lastActiveDate,
     email: data.email || null,
     displayName: data.displayName || null,
-    avatarUrl: data.avatarUrl || null
+    avatarUrl: data.avatarUrl || null,
+    stepNotes: data.stepNotes || {}
   });
 }
 
@@ -409,6 +473,7 @@ export async function resetUserData(userId) {
     try {
       await dbPool.query('DELETE FROM completed_quests WHERE user_id = $1', [userId]);
       await dbPool.query('DELETE FROM completed_steps WHERE user_id = $1', [userId]);
+      await dbPool.query('DELETE FROM step_notes WHERE user_id = $1', [userId]);
       await dbPool.query(`
         UPDATE users 
         SET experience_points = 0, streak = 0, last_active_date = NULL
@@ -428,7 +493,8 @@ export async function resetUserData(userId) {
     lastActiveDate: null,
     email: null,
     displayName: null,
-    avatarUrl: null
+    avatarUrl: null,
+    stepNotes: {}
   };
   writeLocalFile(userId, defaultData);
 }

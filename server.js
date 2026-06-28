@@ -296,6 +296,12 @@ app.post('/api/merge-progress', async (req, res) => {
     // Merge completed steps
     const mergedSteps = Array.from(new Set([...(targetData.completedSteps || []), ...(localData.completedSteps || [])]));
 
+    // Merge step notes
+    const mergedNotes = {
+      ...(localData.stepNotes || {}),
+      ...(targetData.stepNotes || {})
+    };
+
     // Take max of XP and streak
     const mergedXP = Math.max(targetData.experiencePoints || 0, localData.experiencePoints || 0);
     const mergedStreak = Math.max(targetData.streak || 0, localData.streak || 0);
@@ -310,7 +316,8 @@ app.post('/api/merge-progress', async (req, res) => {
       lastActiveDate: mergedActiveDate,
       email: email,
       displayName: displayName,
-      avatarUrl: avatarUrl
+      avatarUrl: avatarUrl,
+      stepNotes: mergedNotes
     };
 
     await saveUserData(targetUserId, mergedData);
@@ -330,6 +337,42 @@ app.post('/api/merge-progress', async (req, res) => {
   } catch (error) {
     console.error('Error merging progress:', error);
     res.status(500).json({ success: false, message: 'Failed to merge progress.' });
+  }
+});
+
+// Save step notes
+app.post('/api/notes', async (req, res) => {
+  try {
+    const userId = req.user ? req.user.id : (req.headers['x-user-id'] || 'local_user');
+    const email = req.user ? req.user.email : null;
+    const displayName = req.user ? req.user.name : null;
+    const avatarUrl = req.user ? req.user.avatarUrl : null;
+
+    const { validatorKey, stepIndex, notes } = req.body;
+    if (!validatorKey || stepIndex === undefined) {
+      return res.status(400).json({ success: false, message: 'Missing validatorKey or stepIndex parameter.' });
+    }
+
+    const data = await getUserData(userId, email, displayName, avatarUrl);
+    if (!data.stepNotes) data.stepNotes = {};
+    data.stepNotes[`${validatorKey}:${stepIndex}`] = notes;
+
+    await saveUserData(userId, data);
+
+    const levelInfo = calculateLevel(data.experiencePoints);
+    res.json({
+      success: true,
+      message: 'Note saved successfully.',
+      data: {
+        ...data,
+        levelInfo,
+        hostOS: process.platform,
+        storageMode: getStorageMode()
+      }
+    });
+  } catch (error) {
+    console.error('Error saving step note:', error);
+    res.status(500).json({ success: false, message: 'Failed to save step note.' });
   }
 });
 
