@@ -229,8 +229,44 @@ function App() {
         throw new Error(`Failed to contact local backend server (HTTP ${res.status}).`);
       }
       const data = await res.json();
-      setUserData(data);
-      localStorage.setItem('devops_odyssey_progress', JSON.stringify(data));
+
+      // Merge server data with localStorage to prevent losing progress
+      // when the server falls back to stale local JSON (e.g. Supabase paused)
+      const localSaved = localStorage.getItem('devops_odyssey_progress');
+      let mergedData = data;
+      if (localSaved) {
+        try {
+          const localData = JSON.parse(localSaved);
+          const mergedQuests = Array.from(new Set([
+            ...(data.completedQuests || []),
+            ...(localData.completedQuests || [])
+          ]));
+          const mergedSteps = Array.from(new Set([
+            ...(data.completedSteps || []),
+            ...(localData.completedSteps || [])
+          ]));
+          const mergedXp = Math.max(data.experiencePoints || 0, localData.experiencePoints || 0);
+          const mergedStreak = Math.max(data.streak || 0, localData.streak || 0);
+
+          // Only use merged data if localStorage actually has more progress
+          if (mergedQuests.length > (data.completedQuests || []).length ||
+              mergedSteps.length > (data.completedSteps || []).length ||
+              mergedXp > (data.experiencePoints || 0)) {
+            mergedData = {
+              ...data,
+              completedQuests: mergedQuests,
+              completedSteps: mergedSteps,
+              experiencePoints: mergedXp,
+              streak: mergedStreak,
+              lastActiveDate: data.lastActiveDate || localData.lastActiveDate
+            };
+          }
+        } catch {
+          // ignore parse errors
+        }
+      }
+      setUserData(mergedData);
+      localStorage.setItem('devops_odyssey_progress', JSON.stringify(mergedData));
       
       // Auto-detect OS of backend
       if (data.hostOS) {
@@ -832,8 +868,7 @@ function App() {
       const currentSteps = userData.completedSteps || [];
       const updatedSteps = currentSteps.includes(stepKey) ? currentSteps : [...currentSteps, stepKey];
       
-      const xpMultiplier = activeQuest.difficulty === 'Beginner' ? 10 : activeQuest.difficulty === 'Intermediate' ? 15 : 20;
-      const newXp = (userData.experiencePoints || 0) + xpMultiplier;
+      const newXp = (userData.experiencePoints || 0) + 20; // 20 XP per step (matches backend)
       
       const calculateLevel = (xp: number) => {
         if (xp < 200) return { level: 1, title: 'DevOps Novice', nextLevelXp: 200 };

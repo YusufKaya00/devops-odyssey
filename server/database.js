@@ -367,6 +367,19 @@ export async function saveUserData(userId, data) {
       }
 
       await client.query('COMMIT');
+
+      // Always write local backup even when PostgreSQL succeeds,
+      // so offline fallback has up-to-date data if DB goes down later
+      writeLocalFile(userId, {
+        completedQuests: data.completedQuests,
+        completedSteps: data.completedSteps || [],
+        experiencePoints: data.experiencePoints,
+        streak: data.streak,
+        lastActiveDate: data.lastActiveDate,
+        email: data.email || null,
+        displayName: data.displayName || null,
+        avatarUrl: data.avatarUrl || null
+      });
       return;
     } catch (e) {
       await client.query('ROLLBACK');
