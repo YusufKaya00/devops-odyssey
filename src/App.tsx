@@ -632,7 +632,8 @@ function App() {
             window.google.accounts.id.renderButton(btn, {
               theme: "outline",
               size: "large",
-              width: 240
+              width: 240,
+              locale: "en"
             });
             setGoogleButtonReady((ready) => ({ ...ready, profile: true }));
           }
@@ -641,7 +642,8 @@ function App() {
           if (headerBtn) {
             window.google.accounts.id.renderButton(headerBtn, {
               theme: "outline",
-              size: "medium"
+              size: "medium",
+              locale: "en"
             });
             setGoogleButtonReady((ready) => ({ ...ready, header: true }));
           }
