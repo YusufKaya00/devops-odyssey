@@ -12,6 +12,7 @@ import {
   getStorageMode
 } from './server/database.js';
 import { calculateLevel } from './server/progress.js';
+import { createGoogleTokenAuthenticator, getRequestIdentity } from './server/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -51,60 +52,7 @@ const XP_VALUES = {
   Advanced: 300
 };
 
-// Middleware to authenticate Google ID token via Google Tokeninfo API
-async function authenticateGoogleToken(req, res, next) {
-  const authHeader = req.headers['authorization'];
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    const idToken = authHeader.split(' ')[1];
-    try {
-      const googleRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
-      if (!googleRes.ok) {
-        return res.status(401).json({ success: false, message: 'Invalid or expired Google token' });
-      }
-      const payload = await googleRes.json();
-      
-      // Validate audience matches process.env.GOOGLE_CLIENT_ID
-      const allowedClientIds = [process.env.GOOGLE_CLIENT_ID, process.env.VITE_GOOGLE_CLIENT_ID];
-      if (!allowedClientIds.includes(payload.aud)) {
-        return res.status(401).json({ success: false, message: 'Audience mismatch' });
-      }
-
-      req.user = {
-        id: payload.sub,
-        email: payload.email,
-        name: payload.name,
-        avatarUrl: payload.picture
-      };
-    } catch (e) {
-      // Network error (timeout, DNS failure, etc.) — NOT an invalid token.
-      // Fall back to local JWT decoding so the user isn't logged out unnecessarily.
-      console.warn('Google token verification network error, falling back to local JWT decode:', e.message);
-      try {
-        const parts = idToken.split('.');
-        if (parts.length === 3) {
-          const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
-          req.user = {
-            id: payload.sub,
-            email: payload.email,
-            name: payload.name,
-            avatarUrl: payload.picture
-          };
-          console.log(`Using locally decoded JWT for user ${payload.sub} (${payload.email})`);
-        } else {
-          req.user = null;
-        }
-      } catch (decodeErr) {
-        console.error('Failed to decode JWT locally:', decodeErr.message);
-        req.user = null;
-      }
-    }
-  } else {
-    req.user = null;
-  }
-  next();
-}
-
-app.use(authenticateGoogleToken);
+app.use(createGoogleTokenAuthenticator());
 
 // Health Endpoint
 app.get('/api/health', (req, res) => {
@@ -114,10 +62,7 @@ app.get('/api/health', (req, res) => {
 // Get User Profile & Progress
 app.get('/api/status', async (req, res) => {
   try {
-    const userId = req.user ? req.user.id : (req.headers['x-user-id'] || 'local_user');
-    const email = req.user ? req.user.email : null;
-    const displayName = req.user ? req.user.name : null;
-    const avatarUrl = req.user ? req.user.avatarUrl : null;
+    const { id: userId, email, name: displayName, avatarUrl } = getRequestIdentity(req);
 
     const data = await getUserData(userId, email, displayName, avatarUrl);
     const levelInfo = calculateLevel(data.experiencePoints);
@@ -135,10 +80,7 @@ app.get('/api/status', async (req, res) => {
 
 // Verify a Quest
 app.post('/api/verify', async (req, res) => {
-  const userId = req.user ? req.user.id : (req.headers['x-user-id'] || 'local_user');
-  const email = req.user ? req.user.email : null;
-  const displayName = req.user ? req.user.name : null;
-  const avatarUrl = req.user ? req.user.avatarUrl : null;
+  const { id: userId, email, name: displayName, avatarUrl } = getRequestIdentity(req);
 
   const { validatorKey, difficulty, isSimulated, stepIndex } = req.body;
   
@@ -262,10 +204,7 @@ app.post('/api/merge-progress', async (req, res) => {
     if (!req.user) {
       return res.status(401).json({ success: false, message: 'Google Authentication required to merge progress.' });
     }
-    const targetUserId = req.user.id;
-    const email = req.user.email;
-    const displayName = req.user.name;
-    const avatarUrl = req.user.avatarUrl;
+    const { id: targetUserId, email, name: displayName, avatarUrl } = getRequestIdentity(req);
 
     let localData = await getUserData('local_user');
     const targetData = await getUserData(targetUserId, email, displayName, avatarUrl);
@@ -343,10 +282,7 @@ app.post('/api/merge-progress', async (req, res) => {
 // Save step notes
 app.post('/api/notes', async (req, res) => {
   try {
-    const userId = req.user ? req.user.id : (req.headers['x-user-id'] || 'local_user');
-    const email = req.user ? req.user.email : null;
-    const displayName = req.user ? req.user.name : null;
-    const avatarUrl = req.user ? req.user.avatarUrl : null;
+    const { id: userId, email, name: displayName, avatarUrl } = getRequestIdentity(req);
 
     const { validatorKey, stepIndex, notes } = req.body;
     if (!validatorKey || stepIndex === undefined) {
@@ -379,7 +315,7 @@ app.post('/api/notes', async (req, res) => {
 // Reset progress
 app.post('/api/reset', async (req, res) => {
   try {
-    const userId = req.user ? req.user.id : (req.headers['x-user-id'] || 'local_user');
+    const { id: userId } = getRequestIdentity(req);
     await resetUserData(userId);
     const defaultData = { completedQuests: [], completedSteps: [], experiencePoints: 0, streak: 0, lastActiveDate: null };
     res.json({
