@@ -19,7 +19,14 @@ const quests = [
         command: 'echo "Plan -> Code -> Build -> Test -> Release -> Deploy -> Operate -> Monitor" > sdlc-phases.txt',
         output: 'Wrote sdlc-phases.txt.'
       }
-    ]
+    ],
+    conceptSummary: "The Software Development Life Cycle (SDLC) defines the phases of software creation: Plan, Code, Build, Test, Release, Deploy, Operate, and Monitor. DevOps transforms this linear process into a continuous loop.\n\nBy automating handoffs between these phases, teams reduce friction, accelerate delivery, and ensure that operational feedback continuously informs the planning phase.",
+    learningObjectives: [
+        "Document standard SDLC phases.",
+        "Explain the continuous DevOps feedback loop.",
+        "Identify handoff points between development and operations."
+    ],
+    realWorldScenario: "You are onboarding a new engineer. You whiteboard the entire pipeline, showing how a commit triggers a build, runs tests, and deploys to staging, completing the CI/CD loop."
   }),
   createQuest({
     id: 'sw_scrum_backlog',
@@ -39,7 +46,14 @@ const quests = [
         command: 'echo "ID: TICKET-101 Summary: Implement SSO login Priority: High" > backlog.ticket',
         output: 'Wrote backlog.ticket.'
       }
-    ]
+    ],
+    conceptSummary: "Agile methodologies like Scrum use a Backlog to organize and prioritize work. User stories and tasks are written as tickets detailing the requirements, priority, and effort.\n\nA well-maintained backlog ensures the team is always working on the most valuable items and provides clear visibility into upcoming sprints and project scope.",
+    learningObjectives: [
+        "Model feature requests as structured tickets.",
+        "Define prioritization states in a backlog.",
+        "Understand Agile sprint planning processes."
+    ],
+    realWorldScenario: "During sprint planning, the product manager requests a new authentication feature. You create a high-priority ticket in the backlog, detailing the required SSO integration."
   }),
   createQuest({
     id: 'sw_acceptance_criteria',
@@ -59,7 +73,14 @@ const quests = [
         command: 'echo "Given user has registered credentials When they login Then access token is returned" > criteria.txt',
         output: 'Wrote criteria.txt.'
       }
-    ]
+    ],
+    conceptSummary: "Acceptance criteria define the boundaries of a user story, clarifying exactly what must be achieved for a feature to be considered \"Done\".\n\nThe Given-When-Then format (Behavior-Driven Development) translates ambiguous business requirements into testable, objective scenarios, ensuring developers and stakeholders share the same expectations.",
+    learningObjectives: [
+        "Formulate Given-When-Then acceptance criteria.",
+        "Define clear boundary conditions for features.",
+        "Translate business logic into testable scenarios."
+    ],
+    realWorldScenario: "A ticket says \"Improve search.\" You rewrite this vague request into strict Given-When-Then criteria, allowing the QA team to write precise automated tests."
   }),
   createQuest({
     id: 'sw_branching_pr_review',
@@ -79,7 +100,14 @@ const quests = [
         command: 'echo "Checklist: 1.Tests pass 2.No plain credentials 3.Clean git commits" > pr-checklist.txt',
         output: 'Wrote pr-checklist.txt.'
       }
-    ]
+    ],
+    conceptSummary: "Pull Requests (PRs) act as the primary quality gate in modern software development. They facilitate peer review, automated testing, and security scanning before code is merged into the main branch.\n\nChecklists within PRs standardize the review process, ensuring that basic compliance—like passing tests, clean commits, and secret scanning—is never overlooked.",
+    learningObjectives: [
+        "Design comprehensive code review checklists.",
+        "Understand the value of peer review for code quality.",
+        "Enforce security checks before branch merges."
+    ],
+    realWorldScenario: "A junior developer submits a PR. Using the team's PR checklist, you notice an exposed API key and block the merge until the credentials are removed and revoked."
   }),
   createQuest({
     id: 'sw_test_strategy',
@@ -99,7 +127,14 @@ const quests = [
         command: 'echo "layers: { unit: fast isolated, integration: service bindings, e2e: full flow browser }" > test-strategy.txt',
         output: 'Wrote test-strategy.txt.'
       }
-    ]
+    ],
+    conceptSummary: "A robust testing strategy uses a pyramid approach. Unit tests form the base (fast, isolated, numerous). Integration tests check component interactions. End-to-End (E2E) tests simulate real user flows (slow, complex, few).\n\nBalancing these layers ensures high confidence in code correctness while maintaining fast feedback loops for developers during the build process.",
+    learningObjectives: [
+        "Differentiate Unit, Integration, and E2E tests.",
+        "Design a balanced testing pyramid.",
+        "Optimize CI/CD pipeline feedback speed."
+    ],
+    realWorldScenario: "The CI pipeline takes 45 minutes to run. You restructure the test strategy, shifting heavy E2E UI tests to nightly runs and relying on fast unit tests for every commit."
   }),
   createQuest({
     id: 'sw_release_checklist',
@@ -119,7 +154,14 @@ const quests = [
         command: 'echo "1.Review DB migrations 2.Verify rollbacks 3.Update changelog" > release-checklist.txt',
         output: 'Wrote release-checklist.txt.'
       }
-    ]
+    ],
+    conceptSummary: "Pre-flight release checklists are operational safeguards executed right before a deployment to production. They verify that the environment and dependencies are prepared.\n\nConfirming database migrations, backup readiness, and rollback plans reduces the risk of deployment failures and ensures the team is ready to react if something goes wrong.",
+    learningObjectives: [
+        "Write operational pre-flight checks.",
+        "Assess environment readiness for deployment.",
+        "Coordinate critical dependency changes."
+    ],
+    realWorldScenario: "Before deploying version 2.0, you follow the release checklist. You verify that the database snapshot is complete and the rollback scripts are staged, ensuring a safe launch."
   }),
   createQuest({
     id: 'sw_change_risk_score',
@@ -139,7 +181,14 @@ const quests = [
         command: 'echo "impact=high backup_rollback=verified score=lowrisk" > risk-analysis.txt',
         output: 'Wrote risk-analysis.txt.'
       }
-    ]
+    ],
+    conceptSummary: "Change Risk Evaluation categorizes deployments based on their potential impact and the reliability of their rollback mechanisms. Low-risk changes can be deployed automatically via CI/CD.\n\nHigh-risk changes (like schema migrations) may require manual approval gates. Risk scoring balances the need for speed with the necessity of stability and governance.",
+    learningObjectives: [
+        "Calculate operational risk scores for deployments.",
+        "Identify high-impact change categories.",
+        "Determine the necessity of manual approval gates."
+    ],
+    realWorldScenario: "You are deploying a minor CSS fix. Based on the risk evaluation matrix, it scores as \"low risk,\" allowing it to bypass manual CAB approval and deploy automatically."
   }),
   createQuest({
     id: 'sw_incident_postmortem',
@@ -159,7 +208,14 @@ const quests = [
         command: 'echo "Timeline: 12:00 outage, 12:05 rollback\nRoot Cause: DB timeout\nAction Item: Set query limits" > postmortem.md',
         output: 'Wrote postmortem.md.'
       }
-    ]
+    ],
+    conceptSummary: "A blameless postmortem is an incident review focused on systemic causes rather than human error. It documents the timeline, root cause, and actionable preventions.\n\nBy assuming everyone acted with the best intentions given the information they had, teams foster a culture of psychological safety, which is essential for continuous improvement.",
+    learningObjectives: [
+        "Draft blameless incident postmortems.",
+        "Trace chronological event timelines.",
+        "Identify systemic and preventative action items."
+    ],
+    realWorldScenario: "After a 30-minute outage, you lead the postmortem. Instead of blaming the developer who pushed the code, you focus on why the CI pipeline failed to catch the syntax error."
   }),
   createQuest({
     id: 'sw_dora_metrics',
@@ -179,7 +235,14 @@ const quests = [
         command: 'echo "DF=Deployment Frequency, LT=Lead Time for Changes, MTTR=Mean Time to Restore, CFR=Change Failure Rate" > dora.txt',
         output: 'Wrote dora.txt.'
       }
-    ]
+    ],
+    conceptSummary: "DORA metrics are the industry standard for measuring software delivery performance. They balance velocity (Deployment Frequency, Lead Time for Changes) with stability (Mean Time to Restore, Change Failure Rate).\n\nTracking these four metrics helps engineering teams identify bottlenecks, measure the impact of DevOps transformations, and objectively compare their performance to industry benchmarks.",
+    learningObjectives: [
+        "Define the four core DORA metrics.",
+        "Measure software delivery velocity.",
+        "Track system stability and recovery speed."
+    ],
+    realWorldScenario: "The VP of Engineering wants to know if the new CI/CD pipeline was worth the investment. You show that Deployment Frequency doubled and Lead Time dropped by 50%."
   }),
   createQuest({
     id: 'sw_team_topology_handoff',
@@ -199,7 +262,14 @@ const quests = [
         command: 'echo "pattern=Platform provides self-service APIs; Stream-aligned builds features" > topology.txt',
         output: 'Wrote topology.txt.'
       }
-    ]
+    ],
+    conceptSummary: "Team Topologies modernizes organizational design. Stream-aligned teams build features end-to-end. Platform teams build internal self-service APIs and tools to support them.\n\nThis model eliminates manual ticket handoffs between Dev and Ops, reducing cognitive load and allowing feature teams to operate autonomously and deploy faster.",
+    learningObjectives: [
+        "Differentiate Platform and Stream-aligned team roles.",
+        "Design self-service API boundaries.",
+        "Reduce organizational handoff bottlenecks."
+    ],
+    realWorldScenario: "Instead of filing a Jira ticket for the Ops team to provision a database, the Platform team provides a self-service Terraform module that the developers use directly."
   }),
   createQuest({
     id: 'sw_capstone_change_lifecycle',
@@ -236,7 +306,14 @@ const quests = [
         command: 'cat dora.txt',
         output: 'DF=Deployment Frequency, LT=Lead Time for Changes, MTTR=Mean Time to Restore, CFR=Change Failure Rate'
       }
-    ]
+    ],
+    conceptSummary: "The end-to-end release lifecycle connects Agile planning, rigorous code review, and performance measurement. A healthy pipeline ensures value flows smoothly from an idea in the backlog to measurable metrics in production.\n\nThis capstone tests your ability to verify the integrity of this entire lifecycle, ensuring that checks and balances are active at every critical stage.",
+    learningObjectives: [
+        "Trace software changes from backlog to deployment.",
+        "Apply comprehensive code review criteria.",
+        "Validate the integration of delivery metrics."
+    ],
+    realWorldScenario: "As a release manager, you audit an upcoming major release. You ensure the user story is detailed, the PR passed the security checklist, and DORA tracking is enabled."
   })
 ];
 
@@ -346,5 +423,56 @@ export const softwarePracticesModule = createModule({
       answerIndex: 0,
       explanation: 'Stream-aligned teams are cross-functional groups shipping customer-facing features directly without handoff blockages.'
     }
-  ])
+  ]),
+  keyConcepts: [
+    {
+      "title": "SDLC",
+      "description": "The lifecycle phases of software creation.",
+      "icon": "🔄"
+    },
+    {
+      "title": "Given-When-Then",
+      "description": "Behavioral format for acceptance criteria.",
+      "icon": "✅"
+    },
+    {
+      "title": "Test Pyramid",
+      "description": "Balancing unit, integration, and E2E tests.",
+      "icon": "🔺"
+    },
+    {
+      "title": "Blameless Postmortems",
+      "description": "Systemic incident reviews without blame.",
+      "icon": "🤝"
+    },
+    {
+      "title": "DORA Metrics",
+      "description": "Measuring velocity and stability.",
+      "icon": "📊"
+    },
+    {
+      "title": "Team Topologies",
+      "description": "Structuring teams for fast flow.",
+      "icon": "👥"
+    }
+  ],
+  commandCheatSheet: [
+    {
+      "command": "git checkout -b feature/login",
+      "description": "Create and switch to a new branch."
+    },
+    {
+      "command": "git commit -m \"Add tests\"",
+      "description": "Commit code changes."
+    },
+    {
+      "command": "npm test",
+      "description": "Run test suite locally."
+    }
+  ],
+  learningPath: "Learn how to plan work effectively using Agile backlogs. Discover how to use pull requests, test strategies, and DORA metrics to deliver software safely and swiftly.",
+  modulePrerequisites: [
+    "Familiarity with version control (Git).",
+    "Basic understanding of software development."
+  ]
 });

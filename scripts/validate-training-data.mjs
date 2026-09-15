@@ -1,394 +1,257 @@
-import fs from 'node:fs';
+import { isDeepStrictEqual } from 'node:util';
+import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { build } from 'vite';
 
-const root = process.cwd();
-const requiredFiles = [
-  'src/data/training/types.ts',
-  'src/data/training/helpers.ts',
-  'src/data/training/index.ts',
-  'src/data/training/git.ts',
-  'src/data/training/programming.ts',
-  'src/data/training/linux.ts',
-  'src/data/training/networking.ts',
-  'src/data/training/serverManagement.ts',
-  'src/data/training/containers.ts',
-  'src/data/training/kubernetes.ts',
-  'src/data/training/iac.ts',
-  'src/data/training/cicd.ts',
-  'src/data/training/observability.ts',
-  'src/data/training/cloud.ts',
-  'src/data/training/softwarePractices.ts'
-];
+const projectRoot = fileURLToPath(new URL('../', import.meta.url));
+const moduleIds = Array.from({ length: 12 }, (_, index) => index + 1);
+const tiers = new Set(['Foundation', 'Operator', 'Senior', 'Capstone']);
+const difficulties = new Set(['Beginner', 'Intermediate', 'Advanced']);
+const moduleMetadata = ['keyConcepts', 'commandCheatSheet', 'learningPath', 'modulePrerequisites'];
+const minimumQuests = [11, 10, 12, 11, 10, 12, 14, 12, 12, 11, 12, 11];
 
-const missing = requiredFiles.filter(file => !fs.existsSync(path.join(root, file)));
-
-if (missing.length > 0) {
-  console.error('Missing training files:');
-  for (const file of missing) {
-    console.error(`- ${file}`);
+export async function loadTrainingData() {
+  const entry = 'virtual:training-audit';
+  // Use the installed compiler, without the app config, a server, or disk output.
+  const result = await build({
+    root: projectRoot,
+    configFile: false,
+    logLevel: 'silent',
+    plugins: [{
+      name: 'training-audit-entry',
+      resolveId(id) { if (id === entry) return '\0' + entry; },
+      load(id) {
+        if (id !== '\0' + entry) return;
+        return [
+          'export { scenarioModules } from "/src/data/training/index.ts";',
+          'export { roadmapModules } from "/src/data/roadmapData.ts";',
+          'export { expandRoadmapModules } from "/src/data/additionalTraining.ts";',
+          'export { createQuest, createConceptQuiz, createModule } from "/src/data/training/helpers.ts";'
+        ].join('\n');
+      }
+    }],
+    build: {
+      write: false,
+      minify: false,
+      rolldownOptions: { input: entry },
+      lib: { entry, formats: ['es'], fileName: 'training-audit' }
+    }
+  });
+  const outputs = (Array.isArray(result) ? result : [result]).flatMap(bundle => bundle.output);
+  const chunks = outputs.filter(output => output.type === 'chunk');
+  if (chunks.length !== 1 || chunks[0].imports.length || chunks[0].dynamicImports.length) {
+    throw new Error('Training audit requires one self-contained data bundle.');
   }
-  process.exit(1);
+  return import('data:text/javascript;base64,' + Buffer.from(chunks[0].code).toString('base64'));
 }
 
-const typesSource = fs.readFileSync(path.join(root, 'src/data/training/types.ts'), 'utf8');
-const requiredTypeNames = [
-  'ScenarioTier',
-  'ScenarioQuest',
-  'ScenarioModule',
-  'ScenarioStep',
-  'ScenarioQuizQuestion',
-  'CommandExpectation'
-];
+export function validateTrainingData({ scenarioModules, roadmapModules }) {
+  const errors = [];
+  const warnings = [];
+  const fail = (location, message) => errors.push(location + ': ' + message);
+  const isObject = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+  const text = (value, location) => {
+    if (typeof value !== 'string' || !value.trim()) fail(location, 'must be a non-empty string');
+  };
+  const object = (value, location) => {
+    if (isObject(value)) return true;
+    fail(location, 'must be an object');
+    return false;
+  };
+  const array = (value, location, minimum = 0) => {
+    if (!Array.isArray(value)) {
+      fail(location, 'must be an array');
+      return [];
+    }
+    if (value.length < minimum) fail(location, 'needs at least ' + minimum + ' entries; found ' + value.length);
+    return value;
+  };
+  const strings = (value, location, minimum = 0, unique = true) => {
+    const items = array(value, location, minimum);
+    items.forEach((item, index) => text(item, location + '[' + index + ']'));
+    if (unique && new Set(items).size !== items.length) fail(location, 'contains duplicate entries');
+    return items;
+  };
+  const fields = (value, names, location) => names.forEach(name => text(value[name], location + '.' + name));
+  const optionalFields = (value, names, location) => names.forEach(name => {
+    if (value[name] !== undefined) text(value[name], location + '.' + name);
+  });
+  const records = (value, names, location, minimum = 0) => {
+    const items = array(value, location, minimum);
+    items.forEach((item, index) => {
+      if (object(item, location + '[' + index + ']')) fields(item, names, location + '[' + index + ']');
+    });
+    return items;
+  };
 
-const missingTypes = requiredTypeNames.filter(name => !typesSource.includes(name));
-if (missingTypes.length > 0) {
-  console.error(`Missing training type exports: ${missingTypes.join(', ')}`);
-  process.exit(1);
+  function validateCatalog(catalog, name, scenario) {
+    const modules = array(catalog, name, 12);
+    const seenModules = new Set();
+    const seenQuests = new Map();
+    const seenValidators = new Set();
+    const summary = [];
+    for (const [moduleIndex, module] of modules.entries()) {
+      const location = name + '[' + moduleIndex + ']';
+      if (!object(module, location)) continue;
+      if (!moduleIds.includes(module.id)) fail(location, 'invalid module ID ' + module.id + '; expected 1-12');
+      if (seenModules.has(module.id)) fail(location, 'duplicate module ID ' + module.id);
+      seenModules.add(module.id);
+      fields(module, ['title', 'icon', 'description', 'detailedInfo'], location);
+      if (scenario) strings(module.outcomes, location + '.outcomes', 1);
+      optionalFields(module, ['learningPath'], location);
+      if (module.modulePrerequisites !== undefined) strings(module.modulePrerequisites, location + '.modulePrerequisites');
+      if (module.keyConcepts !== undefined) records(module.keyConcepts, ['title', 'description'], location + '.keyConcepts', 1);
+      if (module.commandCheatSheet !== undefined) {
+        const entries = records(module.commandCheatSheet, ['command', 'description'], location + '.commandCheatSheet', 1);
+        entries.forEach((entry, index) => {
+          if (isObject(entry)) optionalFields(entry, ['example'], location + '.commandCheatSheet[' + index + ']');
+        });
+      }
+      const resources = array(module.resources, location + '.resources', 1);
+      const resourceUrls = new Set();
+      resources.forEach((resource, index) => {
+        const resourceLocation = location + '.resources[' + index + ']';
+        if (!object(resource, resourceLocation)) return;
+        fields(resource, ['name', 'url'], resourceLocation);
+        if (typeof resource.free !== 'boolean') fail(resourceLocation, 'free must be a boolean');
+        try {
+          const url = new URL(resource.url);
+          if (!['http:', 'https:'].includes(url.protocol)) throw new Error('not a web URL');
+        } catch { fail(resourceLocation, 'url must be an absolute HTTP(S) URL'); }
+        if (resourceUrls.has(resource.url)) fail(resourceLocation, 'duplicate resource URL');
+        resourceUrls.add(resource.url);
+      });
+
+      const questions = array(module.quiz, location + '.quiz', 8);
+      const seenQuestions = new Set();
+      questions.forEach((question, index) => {
+        const questionLocation = location + '.quiz[' + index + ']';
+        if (!object(question, questionLocation)) return;
+        fields(question, ['question', 'explanation'], questionLocation);
+        const options = strings(question.options, questionLocation + '.options', 2);
+        if (!Number.isInteger(question.answerIndex) || question.answerIndex < 0 || question.answerIndex >= options.length) {
+          fail(questionLocation, 'answerIndex must select an existing option');
+        }
+        if (seenQuestions.has(question.question)) fail(questionLocation, 'duplicate quiz question');
+        seenQuestions.add(question.question);
+      });
+      if (scenario && questions.length && questions.every(question => isObject(question) && question.answerIndex === questions[0].answerIndex)) {
+        warnings.push('Module ' + module.id + ': every quiz answer uses the same option index; review assessment quality.');
+      }
+
+      const quests = array(module.quests, location + '.quests', minimumQuests[module.id - 1] ?? 1);
+      let stepCount = 0;
+      quests.forEach((quest, index) => {
+        const questLocation = location + '.quests[' + index + '] (' + (quest?.id ?? '?') + ')';
+        if (!object(quest, questLocation)) return;
+        fields(quest, ['id', 'title', 'objective', 'verificationCommand', 'validatorKey'], questLocation);
+        if (seenQuests.has(quest.id)) fail(questLocation, 'duplicate quest ID ' + quest.id);
+        seenQuests.set(quest.id, { quest, location: questLocation });
+        if (seenValidators.has(quest.validatorKey)) fail(questLocation, 'duplicate validatorKey ' + quest.validatorKey);
+        seenValidators.add(quest.validatorKey);
+        if (!difficulties.has(quest.difficulty)) fail(questLocation, 'invalid difficulty ' + quest.difficulty);
+        if (scenario || quest.tier !== undefined) {
+          if (!tiers.has(quest.tier)) fail(questLocation, 'invalid tier ' + quest.tier);
+          strings(quest.prerequisites, questLocation + '.prerequisites');
+          strings(quest.skillOutcomes, questLocation + '.skillOutcomes', 1);
+        } else if (quest.prerequisites !== undefined) {
+          strings(quest.prerequisites, questLocation + '.prerequisites');
+        }
+        strings(quest.stepsWindows, questLocation + '.stepsWindows', 1, false);
+        strings(quest.stepsLinux, questLocation + '.stepsLinux', 1, false);
+        optionalFields(quest, ['hint', 'localValidatorKey', 'conceptSummary', 'architectureDiagram', 'realWorldScenario'], questLocation);
+        if (quest.learningObjectives !== undefined) strings(quest.learningObjectives, questLocation + '.learningObjectives', 1);
+        const steps = array(quest.interactiveSteps, questLocation + '.interactiveSteps', 1);
+        stepCount += steps.length;
+        steps.forEach((step, stepIndex) => {
+          const stepLocation = questLocation + '.interactiveSteps[' + stepIndex + ']';
+          if (!object(step, stepLocation)) return;
+          fields(step, ['title', 'explanation', 'expectedCommand', 'hint'], stepLocation);
+          // Real commands can succeed silently; empty mock output is valid.
+          if (typeof step.mockOutput !== 'string') fail(stepLocation, 'mockOutput must be a string');
+          if (step.acceptedCommands !== undefined) strings(step.acceptedCommands, stepLocation + '.acceptedCommands');
+          optionalFields(step, ['realWorldContext'], stepLocation);
+          for (const field of ['bestPractices', 'warnings']) {
+            if (step[field] !== undefined) strings(step[field], stepLocation + '.' + field);
+          }
+          if (step.commandFlags !== undefined) records(step.commandFlags, ['flag', 'description'], stepLocation + '.commandFlags');
+          if (step.commonMistakes !== undefined) records(step.commonMistakes, ['commandPattern', 'feedback'], stepLocation + '.commonMistakes');
+        });
+      });
+      summary.push({ id: module.id, title: module.title, quests: quests.length, steps: stepCount, quiz: questions.length });
+    }
+    for (const id of moduleIds) if (!seenModules.has(id)) fail(name, 'missing module ID ' + id);
+
+    // Resolve edges across the entire catalog before checking cycles.
+    const visited = new Set();
+    const visiting = new Set();
+    function visit(id, trail = []) {
+      if (visiting.has(id)) {
+        fail(name, 'prerequisite cycle: ' + [...trail, id].join(' -> '));
+        return;
+      }
+      if (visited.has(id)) return;
+      const node = seenQuests.get(id);
+      if (!node) return;
+      visiting.add(id);
+      for (const dependency of Array.isArray(node.quest.prerequisites) ? node.quest.prerequisites : []) {
+        if (!seenQuests.has(dependency)) fail(node.location, 'unknown prerequisite ' + dependency);
+        else visit(dependency, [...trail, id]);
+      }
+      visiting.delete(id);
+      visited.add(id);
+    }
+    for (const id of seenQuests.keys()) visit(id);
+    return summary;
+  }
+
+  const stats = {
+    scenarioModules: validateCatalog(scenarioModules, 'scenarioModules', true),
+    roadmapModules: validateCatalog(roadmapModules, 'roadmapModules', false)
+  };
+  if (Array.isArray(scenarioModules) && Array.isArray(roadmapModules)) {
+    for (const source of scenarioModules.filter(isObject)) {
+      const target = roadmapModules.find(module => isObject(module) && module.id === source.id);
+      if (!target) continue;
+      for (const field of moduleMetadata) {
+        if (source[field] !== undefined && !isDeepStrictEqual(source[field], target[field])) {
+          fail('roadmap module ' + source.id, 'lost or changed ' + field + ' metadata');
+        }
+      }
+      // Compare complete records, including optional metadata, not source tokens.
+      for (const [field, key] of [['quests', 'id'], ['quiz', 'question'], ['resources', 'url']]) {
+        if (!Array.isArray(source[field]) || !Array.isArray(target[field])) continue;
+        for (const entry of source[field].filter(isObject)) {
+          const actual = target[field].find(candidate => isObject(candidate) && candidate[key] === entry[key]);
+          if (!isDeepStrictEqual(entry, actual)) fail('roadmap module ' + source.id, 'missing or changed ' + field + ' entry ' + entry[key]);
+        }
+      }
+    }
+  }
+  return { errors, warnings, stats };
 }
 
-const helpersSource = fs.readFileSync(path.join(root, 'src/data/training/helpers.ts'), 'utf8');
-for (const helper of ['createQuest', 'createConceptQuiz']) {
-  if (!helpersSource.includes(helper)) {
-    console.error(`Missing helper: ${helper}`);
-    process.exit(1);
+async function main() {
+  const result = validateTrainingData(await loadTrainingData());
+  for (const [name, modules] of Object.entries(result.stats)) {
+    console.log('\n' + name + ':');
+    for (const module of modules) console.log('  ' + module.id + '. ' + module.title + ': ' + module.quests + ' quests, ' + module.steps + ' steps, ' + module.quiz + ' quiz questions');
+    const total = modules.reduce((sum, module) => ({ quests: sum.quests + module.quests, steps: sum.steps + module.steps, quiz: sum.quiz + module.quiz }), { quests: 0, steps: 0, quiz: 0 });
+    console.log('  Total: ' + modules.length + ' modules, ' + total.quests + ' quests, ' + total.steps + ' steps, ' + total.quiz + ' quiz questions');
+  }
+  for (const warning of result.warnings) console.warn('WARNING: ' + warning);
+  if (result.errors.length) {
+    for (const error of result.errors) console.error('ERROR: ' + error);
+    process.exitCode = 1;
+  } else {
+    console.log('\nRuntime training integrity passed. This does not verify command execution or curriculum mastery.');
   }
 }
 
-const programmingSource = fs.readFileSync(path.join(root, 'src/data/training/programming.ts'), 'utf8');
-const programmingQuestIds = [
-  'prog_cli_exit_codes',
-  'prog_log_parser',
-  'prog_json_health_report',
-  'prog_yaml_validator',
-  'prog_http_retry_checker',
-  'prog_config_drift',
-  'prog_concurrent_checker',
-  'prog_deploy_report',
-  'prog_script_unit_tests',
-  'prog_incident_triage_capstone'
-];
-
-const missingProgrammingQuests = programmingQuestIds.filter(id => !programmingSource.includes(id));
-if (missingProgrammingQuests.length > 0) {
-  console.error('Missing programming quests:');
-  for (const id of missingProgrammingQuests) {
-    console.error(`- ${id}`);
-  }
-  process.exit(1);
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch(error => {
+    console.error('Training data could not be loaded: ' + error.message);
+    process.exitCode = 1;
+  });
 }
-
-const programmingQuestionCount = (programmingSource.match(/question:/g) || []).length;
-if (programmingQuestionCount < 8) {
-  console.error(`Programming module needs at least 8 quiz questions, found ${programmingQuestionCount}.`);
-  process.exit(1);
-}
-
-const linuxSource = fs.readFileSync(path.join(root, 'src/data/training/linux.ts'), 'utf8');
-const linuxQuestIds = [
-  'linux_paths_filesystem',
-  'linux_permissions_deep',
-  'linux_process_triage',
-  'linux_disk_memory',
-  'linux_text_pipeline',
-  'linux_bash_strict_mode',
-  'linux_cron_logs',
-  'linux_systemd_unit',
-  'linux_ssh_keys',
-  'linux_backup_restore',
-  'linux_failure_modes',
-  'linux_service_capstone'
-];
-
-const missingLinuxQuests = linuxQuestIds.filter(id => !linuxSource.includes(id));
-if (missingLinuxQuests.length > 0) {
-  console.error('Missing Linux quests:');
-  for (const id of missingLinuxQuests) {
-    console.error(`- ${id}`);
-  }
-  process.exit(1);
-}
-
-const linuxQuestionCount = (linuxSource.match(/question:/g) || []).length;
-if (linuxQuestionCount < 8) {
-  console.error(`Linux module needs at least 8 quiz questions, found ${linuxQuestionCount}.`);
-  process.exit(1);
-}
-
-const networkingSource = fs.readFileSync(path.join(root, 'src/data/training/networking.ts'), 'utf8');
-const networkingQuestIds = [
-  'net_osi_diagnostic_map',
-  'net_dns_lookup',
-  'net_http_headers',
-  'net_tls_certificate',
-  'net_ports_sockets',
-  'net_firewall_rules',
-  'net_cidr_subnets',
-  'net_lb_health_checks',
-  'net_dns_https_failure',
-  'net_exposure_baseline',
-  'net_service_path_capstone'
-];
-
-const missingNetworkingQuests = networkingQuestIds.filter(id => !networkingSource.includes(id));
-if (missingNetworkingQuests.length > 0) {
-  console.error('Missing networking quests:');
-  for (const id of missingNetworkingQuests) {
-    console.error(`- ${id}`);
-  }
-  process.exit(1);
-}
-
-const networkingQuestionCount = (networkingSource.match(/question:/g) || []).length;
-if (networkingQuestionCount < 8) {
-  console.error(`Networking module needs at least 8 quiz questions, found ${networkingQuestionCount}.`);
-  process.exit(1);
-}
-
-const serverManagementSource = fs.readFileSync(path.join(root, 'src/data/training/serverManagement.ts'), 'utf8');
-const serverManagementQuestIds = [
-  'server_nginx_static',
-  'server_reverse_proxy',
-  'server_upstream_lb',
-  'server_cache_compression',
-  'server_log_reading',
-  'server_reload_restart',
-  'server_blue_green',
-  'server_rate_limit_hardening',
-  'server_cert_renewal',
-  'server_proxy_capstone'
-];
-
-const missingServerManagementQuests = serverManagementQuestIds.filter(id => !serverManagementSource.includes(id));
-if (missingServerManagementQuests.length > 0) {
-  console.error('Missing server management quests:');
-  for (const id of missingServerManagementQuests) {
-    console.error(`- ${id}`);
-  }
-  process.exit(1);
-}
-
-const serverManagementQuestionCount = (serverManagementSource.match(/question:/g) || []).length;
-if (serverManagementQuestionCount < 8) {
-  console.error(`Server Management module needs at least 8 quiz questions, found ${serverManagementQuestionCount}.`);
-  process.exit(1);
-}
-
-const containersSource = fs.readFileSync(path.join(root, 'src/data/training/containers.ts'), 'utf8');
-const containersQuestIds = [
-  'docker_run_inspect',
-  'docker_layers_dockerfile',
-  'docker_build_tag',
-  'docker_env_config',
-  'docker_volumes',
-  'docker_networks',
-  'docker_compose_stack',
-  'docker_logs_exec',
-  'docker_healthcheck',
-  'docker_image_optimization',
-  'docker_registry_mock',
-  'docker_stack_capstone'
-];
-
-const missingContainersQuests = containersQuestIds.filter(id => !containersSource.includes(id));
-if (missingContainersQuests.length > 0) {
-  console.error('Missing containers quests:');
-  for (const id of missingContainersQuests) {
-    console.error(`- ${id}`);
-  }
-  process.exit(1);
-}
-
-const containersQuestionCount = (containersSource.match(/question:/g) || []).length;
-if (containersQuestionCount < 8) {
-  console.error(`Containers module needs at least 8 quiz questions, found ${containersQuestionCount}.`);
-  process.exit(1);
-}
-
-const kubernetesSource = fs.readFileSync(path.join(root, 'src/data/training/kubernetes.ts'), 'utf8');
-const kubernetesQuestIds = [
-  'k8s_kubeconfig_cluster',
-  'k8s_pods_describe_logs',
-  'k8s_deployments_replicasets',
-  'k8s_rollout_undo',
-  'k8s_services_types',
-  'k8s_configmaps_secrets',
-  'k8s_resources_limits',
-  'k8s_probes',
-  'k8s_ingress',
-  'k8s_pvc_storage',
-  'k8s_jobs_cronjobs',
-  'k8s_helm_release',
-  'k8s_failure_modes',
-  'k8s_capstone_rollout_recovery'
-];
-
-const missingKubernetesQuests = kubernetesQuestIds.filter(id => !kubernetesSource.includes(id));
-if (missingKubernetesQuests.length > 0) {
-  console.error('Missing Kubernetes quests:');
-  for (const id of missingKubernetesQuests) {
-    console.error(`- ${id}`);
-  }
-  process.exit(1);
-}
-
-const kubernetesQuestionCount = (kubernetesSource.match(/question:/g) || []).length;
-if (kubernetesQuestionCount < 8) {
-  console.error(`Kubernetes module needs at least 8 quiz questions, found ${kubernetesQuestionCount}.`);
-  process.exit(1);
-}
-
-const iacSource = fs.readFileSync(path.join(root, 'src/data/training/iac.ts'), 'utf8');
-const iacQuestIds = [
-  'iac_tf_lifecycle',
-  'iac_tf_variables_outputs',
-  'iac_tf_state_drift',
-  'iac_tf_providers_resources',
-  'iac_tf_modules',
-  'iac_tf_remote_backend',
-  'iac_tf_import',
-  'iac_tf_plan_review',
-  'iac_ansible_inventory',
-  'iac_ansible_idempotency',
-  'iac_secret_handling',
-  'iac_capstone_drift_fix'
-];
-
-const missingIacQuests = iacQuestIds.filter(id => !iacSource.includes(id));
-if (missingIacQuests.length > 0) {
-  console.error('Missing IaC quests:');
-  for (const id of missingIacQuests) {
-    console.error(`- ${id}`);
-  }
-  process.exit(1);
-}
-
-const iacQuestionCount = (iacSource.match(/question:/g) || []).length;
-if (iacQuestionCount < 8) {
-  console.error(`IaC module needs at least 8 quiz questions, found ${iacQuestionCount}.`);
-  process.exit(1);
-}
-
-const cicdSource = fs.readFileSync(path.join(root, 'src/data/training/cicd.ts'), 'utf8');
-const cicdQuestIds = [
-  'cicd_pipeline_anatomy',
-  'cicd_build_stage',
-  'cicd_test_gate',
-  'cicd_artifacts',
-  'cicd_dependency_cache',
-  'cicd_env_secrets',
-  'cicd_matrix_jobs',
-  'cicd_manual_approval',
-  'cicd_staging_deploy',
-  'cicd_rollback',
-  'cicd_security_scan',
-  'cicd_capstone_full_pipeline'
-];
-
-const missingCicdQuests = cicdQuestIds.filter(id => !cicdSource.includes(id));
-if (missingCicdQuests.length > 0) {
-  console.error('Missing CI/CD quests:');
-  for (const id of missingCicdQuests) {
-    console.error(`- ${id}`);
-  }
-  process.exit(1);
-}
-
-const cicdQuestionCount = (cicdSource.match(/question:/g) || []).length;
-if (cicdQuestionCount < 8) {
-  console.error(`CI/CD module needs at least 8 quiz questions, found ${cicdQuestionCount}.`);
-  process.exit(1);
-}
-
-const observabilitySource = fs.readFileSync(path.join(root, 'src/data/training/observability.ts'), 'utf8');
-const observabilityQuestIds = [
-  'obs_signals_metrics_logs_traces',
-  'obs_prometheus_scrape',
-  'obs_promql_queries',
-  'obs_alert_rule',
-  'obs_grafana_dashboard',
-  'obs_log_correlation',
-  'obs_slo_error_budget',
-  'obs_alert_routing',
-  'obs_runbook',
-  'obs_dashboard_improvement',
-  'obs_capstone_error_investigation'
-];
-
-const missingObservabilityQuests = observabilityQuestIds.filter(id => !observabilitySource.includes(id));
-if (missingObservabilityQuests.length > 0) {
-  console.error('Missing Observability quests:');
-  for (const id of missingObservabilityQuests) {
-    console.error(`- ${id}`);
-  }
-  process.exit(1);
-}
-
-const observabilityQuestionCount = (observabilitySource.match(/question:/g) || []).length;
-if (observabilityQuestionCount < 8) {
-  console.error(`Observability module needs at least 8 quiz questions, found ${observabilityQuestionCount}.`);
-  process.exit(1);
-}
-
-const cloudSource = fs.readFileSync(path.join(root, 'src/data/training/cloud.ts'), 'utf8');
-const cloudQuestIds = [
-  'cloud_cli_identity_region',
-  'cloud_iam_least_privilege',
-  'cloud_object_lifecycle',
-  'cloud_vpc_subnet_sg',
-  'cloud_vm_launch_config',
-  'cloud_lb_target_group',
-  'cloud_db_backup_policy',
-  'cloud_serverless_function',
-  'cloud_logs_metrics',
-  'cloud_cost_tags_budget',
-  'cloud_well_architected',
-  'cloud_capstone_service_environment'
-];
-
-const missingCloudQuests = cloudQuestIds.filter(id => !cloudSource.includes(id));
-if (missingCloudQuests.length > 0) {
-  console.error('Missing Cloud quests:');
-  for (const id of missingCloudQuests) {
-    console.error(`- ${id}`);
-  }
-  process.exit(1);
-}
-
-const cloudQuestionCount = (cloudSource.match(/question:/g) || []).length;
-if (cloudQuestionCount < 8) {
-  console.error(`Cloud module needs at least 8 quiz questions, found ${cloudQuestionCount}.`);
-  process.exit(1);
-}
-
-const softwarePracticesSource = fs.readFileSync(path.join(root, 'src/data/training/softwarePractices.ts'), 'utf8');
-const softwarePracticesQuestIds = [
-  'sw_sdlc_release_flow',
-  'sw_scrum_backlog',
-  'sw_acceptance_criteria',
-  'sw_branching_pr_review',
-  'sw_test_strategy',
-  'sw_release_checklist',
-  'sw_change_risk_score',
-  'sw_incident_postmortem',
-  'sw_dora_metrics',
-  'sw_team_topology_handoff',
-  'sw_capstone_change_lifecycle'
-];
-
-const missingSoftwarePracticesQuests = softwarePracticesQuestIds.filter(id => !softwarePracticesSource.includes(id));
-if (missingSoftwarePracticesQuests.length > 0) {
-  console.error('Missing Software Practices quests:');
-  for (const id of missingSoftwarePracticesQuests) {
-    console.error(`- ${id}`);
-  }
-  process.exit(1);
-}
-
-const softwarePracticesQuestionCount = (softwarePracticesSource.match(/question:/g) || []).length;
-if (softwarePracticesQuestionCount < 8) {
-  console.error(`Software Practices module needs at least 8 quiz questions, found ${softwarePracticesQuestionCount}.`);
-  process.exit(1);
-}
-
-console.log('Training data scaffolding validation passed.');
 

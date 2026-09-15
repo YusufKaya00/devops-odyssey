@@ -8,6 +8,10 @@ export interface InteractiveStep {
   acceptedCommands?: string[];
   hint: string;
   mockOutput: string;
+  commandFlags?: Array<{ flag: string; description: string }>;
+  realWorldContext?: string;
+  bestPractices?: string[];
+  warnings?: string[];
 }
 
 export interface Quest {
@@ -21,6 +25,10 @@ export interface Quest {
   validatorKey: string; // Used by local Express server to know how to check it
   hint?: string;
   interactiveSteps: InteractiveStep[]; // Sub-steps for interactive browser shell
+  conceptSummary?: string;
+  learningObjectives?: string[];
+  architectureDiagram?: string;
+  realWorldScenario?: string;
 }
 
 export interface ResourceLink {
@@ -45,6 +53,10 @@ export interface ModuleData {
   resources: ResourceLink[];
   quests: Quest[];
   quiz?: ModuleQuizQuestion[];
+  keyConcepts?: Array<{ title: string; description: string; icon?: string }>;
+  commandCheatSheet?: Array<{ command: string; description: string; example?: string }>;
+  learningPath?: string;
+  modulePrerequisites?: string[];
 }
 
 export interface BookData {

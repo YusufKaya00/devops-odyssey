@@ -15,6 +15,10 @@ export interface ScenarioStep extends CommandExpectation {
   title: string;
   explanation: string;
   hint: string;
+  commandFlags?: Array<{ flag: string; description: string }>;
+  realWorldContext?: string;
+  bestPractices?: string[];
+  warnings?: string[];
 }
 
 export interface ScenarioQuizQuestion {
@@ -39,6 +43,10 @@ export interface ScenarioQuest {
   localValidatorKey?: string;
   hint?: string;
   interactiveSteps: ScenarioStep[];
+  conceptSummary?: string;
+  learningObjectives?: string[];
+  architectureDiagram?: string;
+  realWorldScenario?: string;
 }
 
 export interface ResourceLink {
@@ -57,5 +65,9 @@ export interface ScenarioModule {
   resources: ResourceLink[];
   quests: ScenarioQuest[];
   quiz: ScenarioQuizQuestion[];
+  keyConcepts?: Array<{ title: string; description: string; icon?: string }>;
+  commandCheatSheet?: Array<{ command: string; description: string; example?: string }>;
+  learningPath?: string;
+  modulePrerequisites?: string[];
 }
 

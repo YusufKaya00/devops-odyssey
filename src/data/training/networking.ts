@@ -12,6 +12,9 @@ const quests = [
       'Connect DNS, TCP, TLS, and HTTP to practical checks.',
       'Choose the next diagnostic command from a symptom.'
     ],
+    conceptSummary: 'Network issues often masquerade as application failures. By systematically debugging through the network layers (DNS, TCP, TLS, HTTP), you can quickly isolate the true fault.\n\nThis methodical approach prevents wasted effort and is essential for maintaining secure, available services in any environment.',
+    learningObjectives: ['Analyze network traffic and resolution paths.', 'Debug connectivity and encryption failures.', 'Deploy protective network configurations.'],
+    realWorldScenario: 'Users are reporting that the application is unreachable. You need to step through the network layers to locate and fix the blockage.',
     commands: [
       {
         title: 'Create Layer Map',
@@ -38,6 +41,9 @@ const quests = [
       'Distinguish hostname failure from app failure.',
       'Recognize A record style output.'
     ],
+    conceptSummary: 'Network issues often masquerade as application failures. By systematically debugging through the network layers (DNS, TCP, TLS, HTTP), you can quickly isolate the true fault.\n\nThis methodical approach prevents wasted effort and is essential for maintaining secure, available services in any environment.',
+    learningObjectives: ['Analyze network traffic and resolution paths.', 'Debug connectivity and encryption failures.', 'Deploy protective network configurations.'],
+    realWorldScenario: 'Users are reporting that the application is unreachable. You need to step through the network layers to locate and fix the blockage.',
     commands: [
       {
         title: 'Resolve a Hostname',
@@ -65,6 +71,9 @@ const quests = [
       'Identify redirects and content type.',
       'Use curl for lightweight service checks.'
     ],
+    conceptSummary: 'Network issues often masquerade as application failures. By systematically debugging through the network layers (DNS, TCP, TLS, HTTP), you can quickly isolate the true fault.\n\nThis methodical approach prevents wasted effort and is essential for maintaining secure, available services in any environment.',
+    learningObjectives: ['Analyze network traffic and resolution paths.', 'Debug connectivity and encryption failures.', 'Deploy protective network configurations.'],
+    realWorldScenario: 'Users are reporting that the application is unreachable. You need to step through the network layers to locate and fix the blockage.',
     commands: [
       {
         title: 'Inspect Headers',
@@ -91,6 +100,9 @@ const quests = [
       'Recognize certificate subject and expiry.',
       'Diagnose TLS failure separately from HTTP failure.'
     ],
+    conceptSummary: 'Network issues often masquerade as application failures. By systematically debugging through the network layers (DNS, TCP, TLS, HTTP), you can quickly isolate the true fault.\n\nThis methodical approach prevents wasted effort and is essential for maintaining secure, available services in any environment.',
+    learningObjectives: ['Analyze network traffic and resolution paths.', 'Debug connectivity and encryption failures.', 'Deploy protective network configurations.'],
+    realWorldScenario: 'Users are reporting that the application is unreachable. You need to step through the network layers to locate and fix the blockage.',
     commands: [
       {
         title: 'Open TLS Handshake',
@@ -117,6 +129,9 @@ const quests = [
       'Map port numbers to processes.',
       'Recognize port conflict symptoms.'
     ],
+    conceptSummary: 'Network issues often masquerade as application failures. By systematically debugging through the network layers (DNS, TCP, TLS, HTTP), you can quickly isolate the true fault.\n\nThis methodical approach prevents wasted effort and is essential for maintaining secure, available services in any environment.',
+    learningObjectives: ['Analyze network traffic and resolution paths.', 'Debug connectivity and encryption failures.', 'Deploy protective network configurations.'],
+    realWorldScenario: 'Users are reporting that the application is unreachable. You need to step through the network layers to locate and fix the blockage.',
     commands: [
       {
         title: 'List Listening TCP Ports',
@@ -144,6 +159,9 @@ const quests = [
       'Prefer narrow allow rules.',
       'Explain why broad exposure is risky.'
     ],
+    conceptSummary: 'Network issues often masquerade as application failures. By systematically debugging through the network layers (DNS, TCP, TLS, HTTP), you can quickly isolate the true fault.\n\nThis methodical approach prevents wasted effort and is essential for maintaining secure, available services in any environment.',
+    learningObjectives: ['Analyze network traffic and resolution paths.', 'Debug connectivity and encryption failures.', 'Deploy protective network configurations.'],
+    realWorldScenario: 'Users are reporting that the application is unreachable. You need to step through the network layers to locate and fix the blockage.',
     commands: [
       {
         title: 'Write Allow Rule',
@@ -176,6 +194,9 @@ const quests = [
       'Separate public and private address ranges.',
       'Document network intent.'
     ],
+    conceptSummary: 'Network issues often masquerade as application failures. By systematically debugging through the network layers (DNS, TCP, TLS, HTTP), you can quickly isolate the true fault.\n\nThis methodical approach prevents wasted effort and is essential for maintaining secure, available services in any environment.',
+    learningObjectives: ['Analyze network traffic and resolution paths.', 'Debug connectivity and encryption failures.', 'Deploy protective network configurations.'],
+    realWorldScenario: 'Users are reporting that the application is unreachable. You need to step through the network layers to locate and fix the blockage.',
     commands: [
       {
         title: 'Write Subnet Plan',
@@ -202,6 +223,9 @@ const quests = [
       'Identify unhealthy backend targets.',
       'Connect backend health to user-facing availability.'
     ],
+    conceptSummary: 'Network issues often masquerade as application failures. By systematically debugging through the network layers (DNS, TCP, TLS, HTTP), you can quickly isolate the true fault.\n\nThis methodical approach prevents wasted effort and is essential for maintaining secure, available services in any environment.',
+    learningObjectives: ['Analyze network traffic and resolution paths.', 'Debug connectivity and encryption failures.', 'Deploy protective network configurations.'],
+    realWorldScenario: 'Users are reporting that the application is unreachable. You need to step through the network layers to locate and fix the blockage.',
     commands: [
       {
         title: 'Create Target List',
@@ -234,6 +258,9 @@ const quests = [
       'Check TLS separately from name resolution.',
       'Explain certificate mismatch symptoms.'
     ],
+    conceptSummary: 'Network issues often masquerade as application failures. By systematically debugging through the network layers (DNS, TCP, TLS, HTTP), you can quickly isolate the true fault.\n\nThis methodical approach prevents wasted effort and is essential for maintaining secure, available services in any environment.',
+    learningObjectives: ['Analyze network traffic and resolution paths.', 'Debug connectivity and encryption failures.', 'Deploy protective network configurations.'],
+    realWorldScenario: 'Users are reporting that the application is unreachable. You need to step through the network layers to locate and fix the blockage.',
     commands: [
       {
         title: 'Verify DNS',
@@ -266,6 +293,9 @@ const quests = [
       'Flag unsafe public admin ports.',
       'Connect exposure review to security posture.'
     ],
+    conceptSummary: 'Network issues often masquerade as application failures. By systematically debugging through the network layers (DNS, TCP, TLS, HTTP), you can quickly isolate the true fault.\n\nThis methodical approach prevents wasted effort and is essential for maintaining secure, available services in any environment.',
+    learningObjectives: ['Analyze network traffic and resolution paths.', 'Debug connectivity and encryption failures.', 'Deploy protective network configurations.'],
+    realWorldScenario: 'Users are reporting that the application is unreachable. You need to step through the network layers to locate and fix the blockage.',
     commands: [
       {
         title: 'Create Exposure Inventory',
@@ -305,6 +335,9 @@ const quests = [
       'Collect evidence from multiple network checks.',
       'Name the failing component and next action.'
     ],
+    conceptSummary: 'Network issues often masquerade as application failures. By systematically debugging through the network layers (DNS, TCP, TLS, HTTP), you can quickly isolate the true fault.\n\nThis methodical approach prevents wasted effort and is essential for maintaining secure, available services in any environment.',
+    learningObjectives: ['Analyze network traffic and resolution paths.', 'Debug connectivity and encryption failures.', 'Deploy protective network configurations.'],
+    realWorldScenario: 'Users are reporting that the application is unreachable. You need to step through the network layers to locate and fix the blockage.',
     commands: [
       {
         title: 'Check DNS Layer',
@@ -352,6 +385,28 @@ export const networkingModule = createModule({
     'Identify unsafe network exposure.',
     'Produce incident-quality network evidence.'
   ],
+  keyConcepts: [
+    { title: 'OSI Model', description: 'Understanding the layers of network communication for troubleshooting.', icon: '🍰' },
+    { title: 'DNS', description: 'Translating human-readable domain names into IP addresses.', icon: '🌐' },
+    { title: 'TCP/IP', description: 'The foundational protocols enabling internet communication.', icon: '🔌' },
+    { title: 'HTTP/HTTPS', description: 'Protocols for web traffic and how headers carry metadata.', icon: '📄' },
+    { title: 'TLS/SSL', description: 'Encrypting traffic and validating identity with certificates.', icon: '🔒' },
+    { title: 'Firewalls', description: 'Controlling network access using allow and deny rules.', icon: '🧱' }
+  ],
+  commandCheatSheet: [
+    { command: 'nslookup', description: 'Query DNS to find the IP address of a domain.' },
+    { command: 'curl -I', description: 'Fetch HTTP headers without downloading the body.' },
+    { command: 'openssl s_client', description: 'Debug TLS certificates and handshakes.' },
+    { command: 'ss -tulpn', description: 'Identify which ports are listening on the system.' },
+    { command: 'ping', description: 'Test basic network reachability.' },
+    { command: 'traceroute', description: 'Trace the network path to a destination.' },
+    { command: 'netstat', description: 'Print network connections and routing tables.' },
+    { command: 'iptables -L', description: 'List current firewall rules.' },
+    { command: 'dig', description: 'Advanced DNS querying tool.' },
+    { command: 'nmap', description: 'Scan for open ports and services.' }
+  ],
+  learningPath: 'Begin with DNS resolution and basic HTTP debugging. Advance into inspecting TLS certificates, managing ports, and configuring firewalls. Conclude by diagnosing complex layered network outages.',
+  modulePrerequisites: ['Familiarity with IP addresses', 'Basic understanding of the internet architecture'],
   resources: [
     { name: 'How DNS Works', url: 'https://howdns.works/', free: true },
     { name: 'How HTTPS Works', url: 'https://howhttps.works/', free: true },

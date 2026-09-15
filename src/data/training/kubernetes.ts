@@ -19,7 +19,14 @@ const quests = [
         command: 'kubectl cluster-info',
         output: 'Kubernetes control plane is running at https://10.96.0.1:6443\nCoreDNS is running at https://10.96.0.1:6443/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding Kubeconfig and Cluster Info is critical for modern infrastructure management. Verify connection to the Kubernetes cluster and inspect cluster status. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of Kubeconfig and Cluster Info',
+      'Configure tools and systems for Kubeconfig and Cluster Info',
+      'Debug and resolve common errors related to Kubeconfig and Cluster Info'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage Kubeconfig and Cluster Info to restore service stability and optimize the deployment workflow.'
   }),
   createQuest({
     id: 'k8s_pods_describe_logs',
@@ -57,7 +64,14 @@ const quests = [
         command: 'kubectl logs my-pod',
         output: '/docker-entrypoint.sh: Configuration complete; ready for start up'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding Pods, Events, and Logs is critical for modern infrastructure management. Deploy a pod, inspect its lifecycle, describe its events, and retrieve logs. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of Pods, Events, and Logs',
+      'Configure tools and systems for Pods, Events, and Logs',
+      'Debug and resolve common errors related to Pods, Events, and Logs'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage Pods, Events, and Logs to restore service stability and optimize the deployment workflow.'
   }),
   createQuest({
     id: 'k8s_deployments_replicasets',
@@ -83,7 +97,14 @@ const quests = [
         command: 'kubectl get deployments',
         output: 'NAME         READY   UP-TO-DATE   AVAILABLE   AGE\nweb-deploy   3/3     3            3           10s'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding Deployments and Scalable Workloads is critical for modern infrastructure management. Create a deployment to manage replicas and scale it. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of Deployments and Scalable Workloads',
+      'Configure tools and systems for Deployments and Scalable Workloads',
+      'Debug and resolve common errors related to Deployments and Scalable Workloads'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage Deployments and Scalable Workloads to restore service stability and optimize the deployment workflow.'
   }),
   createQuest({
     id: 'k8s_rollout_undo',
@@ -115,7 +136,14 @@ const quests = [
         command: 'kubectl rollout undo deployment/web-deploy',
         output: 'deployment.apps/web-deploy rolled back'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding Rollout Management and Rollbacks is critical for modern infrastructure management. Update a deployment image, monitor rollout status, and roll back to a stable version. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of Rollout Management and Rollbacks',
+      'Configure tools and systems for Rollout Management and Rollbacks',
+      'Debug and resolve common errors related to Rollout Management and Rollbacks'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage Rollout Management and Rollbacks to restore service stability and optimize the deployment workflow.'
   }),
   createQuest({
     id: 'k8s_services_types',
@@ -141,7 +169,14 @@ const quests = [
         command: 'kubectl get services',
         output: 'NAME         TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)        AGE\nkubernetes   ClusterIP   10.96.0.1     <none>        443/TCP        1d\nweb-deploy   NodePort    10.96.14.88   <none>        80:31245/TCP   5s'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding Services and Cluster Exposure is critical for modern infrastructure management. Expose a deployment internally and externally using ClusterIP and NodePort. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of Services and Cluster Exposure',
+      'Configure tools and systems for Services and Cluster Exposure',
+      'Debug and resolve common errors related to Services and Cluster Exposure'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage Services and Cluster Exposure to restore service stability and optimize the deployment workflow.'
   }),
   createQuest({
     id: 'k8s_configmaps_secrets',
@@ -167,7 +202,14 @@ const quests = [
         command: 'kubectl create secret generic db-secret --from-literal=password=supersecret',
         output: 'secret/db-secret created'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding ConfigMaps and Secrets is critical for modern infrastructure management. Manage application configuration and sensitive credentials separately from code. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of ConfigMaps and Secrets',
+      'Configure tools and systems for ConfigMaps and Secrets',
+      'Debug and resolve common errors related to ConfigMaps and Secrets'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage ConfigMaps and Secrets to restore service stability and optimize the deployment workflow.'
   }),
   createQuest({
     id: 'k8s_resources_limits',
@@ -187,7 +229,14 @@ const quests = [
         command: 'echo "resources: { requests: { memory: 64Mi, cpu: 250m }, limits: { memory: 128Mi, cpu: 500m } }" > pod-resources.yaml',
         output: 'Wrote pod-resources.yaml.'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding Resource Requests and Limits is critical for modern infrastructure management. Model pod configurations defining CPU and Memory request and limit profiles. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of Resource Requests and Limits',
+      'Configure tools and systems for Resource Requests and Limits',
+      'Debug and resolve common errors related to Resource Requests and Limits'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage Resource Requests and Limits to restore service stability and optimize the deployment workflow.'
   }),
   createQuest({
     id: 'k8s_probes',
@@ -207,7 +256,14 @@ const quests = [
         command: 'echo "livenessProbe: { httpGet: { path: /healthz, port: 80 }, initialDelaySeconds: 3 } readinessProbe: { httpGet: { path: /ready, port: 80 } }" > pod-probes.yaml',
         output: 'Wrote pod-probes.yaml.'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding Readiness and Liveness Probes is critical for modern infrastructure management. Configure probes to automate self-healing and routing safety. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of Readiness and Liveness Probes',
+      'Configure tools and systems for Readiness and Liveness Probes',
+      'Debug and resolve common errors related to Readiness and Liveness Probes'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage Readiness and Liveness Probes to restore service stability and optimize the deployment workflow.'
   }),
   createQuest({
     id: 'k8s_ingress',
@@ -227,7 +283,14 @@ const quests = [
         command: 'echo "rules: - host: shop.internal, http: { paths: [ { path: /, backend: { service: { name: web-service, port: { number: 80 } } } } ] }" > ingress.yaml',
         output: 'Wrote ingress.yaml.'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding Ingress and Path-based Routing is critical for modern infrastructure management. Create an Ingress rule mapping host HTTP paths to backend services. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of Ingress and Path-based Routing',
+      'Configure tools and systems for Ingress and Path-based Routing',
+      'Debug and resolve common errors related to Ingress and Path-based Routing'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage Ingress and Path-based Routing to restore service stability and optimize the deployment workflow.'
   }),
   createQuest({
     id: 'k8s_pvc_storage',
@@ -247,7 +310,14 @@ const quests = [
         command: 'echo "spec: { accessModes: [ReadWriteOnce], resources: { requests: { storage: 1Gi } } }" > pvc.yaml',
         output: 'Wrote pvc.yaml.'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding PersistentVolumeClaims is critical for modern infrastructure management. Create a PersistentVolumeClaim to request persistent disk storage. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of PersistentVolumeClaims',
+      'Configure tools and systems for PersistentVolumeClaims',
+      'Debug and resolve common errors related to PersistentVolumeClaims'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage PersistentVolumeClaims to restore service stability and optimize the deployment workflow.'
   }),
   createQuest({
     id: 'k8s_jobs_cronjobs',
@@ -267,7 +337,14 @@ const quests = [
         command: 'echo "schedule: \'0 0 * * *\' jobTemplate: { spec: { template: { spec: { containers: [ { name: clean, image: alpine } ], restartPolicy: OnFailure } } } }" > cronjob.yaml',
         output: 'Wrote cronjob.yaml.'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding Jobs and CronJobs is critical for modern infrastructure management. Configure a CronJob for scheduled batch executions. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of Jobs and CronJobs',
+      'Configure tools and systems for Jobs and CronJobs',
+      'Debug and resolve common errors related to Jobs and CronJobs'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage Jobs and CronJobs to restore service stability and optimize the deployment workflow.'
   }),
   createQuest({
     id: 'k8s_helm_release',
@@ -299,7 +376,14 @@ const quests = [
         command: 'helm rollback database 1',
         output: 'Rollback release database to revision 1 completed.'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding Helm Package Management is critical for modern infrastructure management. Install, customize, and roll back application charts using Helm. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of Helm Package Management',
+      'Configure tools and systems for Helm Package Management',
+      'Debug and resolve common errors related to Helm Package Management'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage Helm Package Management to restore service stability and optimize the deployment workflow.'
   }),
   createQuest({
     id: 'k8s_failure_modes',
@@ -331,7 +415,14 @@ const quests = [
         command: 'kubectl logs backend-broken',
         output: 'Error: Cannot connect to database at redis://10.96.12.5:6379 (Connection refused)'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding Troubleshooting Pod Failures is critical for modern infrastructure management. Diagnose common failures like ImagePullBackOff and CrashLoopBackOff. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of Troubleshooting Pod Failures',
+      'Configure tools and systems for Troubleshooting Pod Failures',
+      'Debug and resolve common errors related to Troubleshooting Pod Failures'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage Troubleshooting Pod Failures to restore service stability and optimize the deployment workflow.'
   }),
   createQuest({
     id: 'k8s_capstone_rollout_recovery',
@@ -374,7 +465,14 @@ const quests = [
         command: 'kubectl rollout undo deployment/app-service',
         output: 'deployment.apps/app-service rolled back successfully (restored v1.0)'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding Capstone: Production Rollout and Recovery is critical for modern infrastructure management. Deploy a new release, identify container initialization failure, check events/logs, and undo rollout to restore uptime. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of Capstone: Production Rollout and Recovery',
+      'Configure tools and systems for Capstone: Production Rollout and Recovery',
+      'Debug and resolve common errors related to Capstone: Production Rollout and Recovery'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage Capstone: Production Rollout and Recovery to restore service stability and optimize the deployment workflow.'
   })
 ];
 
@@ -473,5 +571,27 @@ export const kubernetesModule = createModule({
       answerIndex: 0,
       explanation: 'kubectl rollout undo reverts the deployment template to the previous revision, triggering a rolling rollback.'
     }
-  ])
+  ]),
+  keyConcepts: [
+    { title: 'Core Architecture', description: 'Understand how components interact and scale in distributed environments.', icon: '🏗️' },
+    { title: 'State Management', description: 'Maintain consistency and reliability across automated deployments.', icon: '🗄️' },
+    { title: 'Security & Access', description: 'Implement least privilege and secure secret handling.', icon: '🔒' },
+    { title: 'Observability', description: 'Gain insights through logs, metrics, and tracing.', icon: '📊' },
+    { title: 'Automation', description: 'Reduce toil through automated pipelines and scripting.', icon: '⚙️' },
+    { title: 'Resilience', description: 'Design systems that withstand failure and recover quickly.', icon: '🛡️' }
+  ],
+  commandCheatSheet: [
+    { command: 'init', description: 'Initialize the working directory and configuration.' },
+    { command: 'apply', description: 'Apply the desired state to the environment.' },
+    { command: 'status', description: 'Check the current status of resources.' },
+    { command: 'logs', description: 'Retrieve operational logs for debugging.' },
+    { command: 'describe', description: 'Show detailed metadata and events.' },
+    { command: 'delete', description: 'Remove resources from the environment.' },
+    { command: 'validate', description: 'Verify configuration syntax and structure.' },
+    { command: 'plan', description: 'Preview changes before applying them.' },
+    { command: 'rollback', description: 'Revert to a previous stable state.' },
+    { command: 'scale', description: 'Adjust resource capacity up or down.' }
+  ],
+  learningPath: 'This module takes you on a journey from foundational setup to advanced operational troubleshooting. You will build practical skills needed to design, deploy, and manage production-grade systems.',
+  modulePrerequisites: ['Basic terminal and CLI navigation', 'Understanding of networking fundamentals'],
 });

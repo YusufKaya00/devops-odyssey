@@ -12,6 +12,9 @@ const quests = [
       'List files safely.',
       'Read a file without modifying it.'
     ],
+    conceptSummary: 'Linux is the foundational OS for most infrastructure. Mastering these system-level commands allows you to diagnose and fix issues directly where applications live.\n\nWithout this visibility, operators are flying blind during incidents. These skills turn you from a passive observer into an active problem solver.',
+    learningObjectives: ['Debug system state using built-in commands.', 'Analyze permissions and process resources.', 'Configure system behavior to ensure stability.'],
+    realWorldScenario: 'A production server is exhibiting strange behavior. You must use native Linux tools to investigate the root cause and restore normal operation.',
     commands: [
       {
         title: 'Print Working Directory',
@@ -45,6 +48,9 @@ const quests = [
       'Use chmod intentionally.',
       'Understand why scripts fail with permission denied.'
     ],
+    conceptSummary: 'Linux is the foundational OS for most infrastructure. Mastering these system-level commands allows you to diagnose and fix issues directly where applications live.\n\nWithout this visibility, operators are flying blind during incidents. These skills turn you from a passive observer into an active problem solver.',
+    learningObjectives: ['Debug system state using built-in commands.', 'Analyze permissions and process resources.', 'Configure system behavior to ensure stability.'],
+    realWorldScenario: 'A production server is exhibiting strange behavior. You must use native Linux tools to investigate the root cause and restore normal operation.',
     commands: [
       {
         title: 'Create a Script',
@@ -85,6 +91,9 @@ const quests = [
       'Find service commands.',
       'Recognize CPU and memory clues.'
     ],
+    conceptSummary: 'Linux is the foundational OS for most infrastructure. Mastering these system-level commands allows you to diagnose and fix issues directly where applications live.\n\nWithout this visibility, operators are flying blind during incidents. These skills turn you from a passive observer into an active problem solver.',
+    learningObjectives: ['Debug system state using built-in commands.', 'Analyze permissions and process resources.', 'Configure system behavior to ensure stability.'],
+    realWorldScenario: 'A production server is exhibiting strange behavior. You must use native Linux tools to investigate the root cause and restore normal operation.',
     commands: [
       {
         title: 'List Processes',
@@ -111,6 +120,9 @@ const quests = [
       'Find large directories.',
       'Read memory availability signals.'
     ],
+    conceptSummary: 'Linux is the foundational OS for most infrastructure. Mastering these system-level commands allows you to diagnose and fix issues directly where applications live.\n\nWithout this visibility, operators are flying blind during incidents. These skills turn you from a passive observer into an active problem solver.',
+    learningObjectives: ['Debug system state using built-in commands.', 'Analyze permissions and process resources.', 'Configure system behavior to ensure stability.'],
+    realWorldScenario: 'A production server is exhibiting strange behavior. You must use native Linux tools to investigate the root cause and restore normal operation.',
     commands: [
       {
         title: 'Check Filesystem Capacity',
@@ -143,6 +155,9 @@ const quests = [
       'Use sort and uniq to summarize repeated events.',
       'Build a small incident evidence pipeline.'
     ],
+    conceptSummary: 'Linux is the foundational OS for most infrastructure. Mastering these system-level commands allows you to diagnose and fix issues directly where applications live.\n\nWithout this visibility, operators are flying blind during incidents. These skills turn you from a passive observer into an active problem solver.',
+    learningObjectives: ['Debug system state using built-in commands.', 'Analyze permissions and process resources.', 'Configure system behavior to ensure stability.'],
+    realWorldScenario: 'A production server is exhibiting strange behavior. You must use native Linux tools to investigate the root cause and restore normal operation.',
     commands: [
       {
         title: 'Create Access Log',
@@ -175,6 +190,9 @@ const quests = [
       'Accept script arguments.',
       'Explain why silent shell failures are dangerous.'
     ],
+    conceptSummary: 'Linux is the foundational OS for most infrastructure. Mastering these system-level commands allows you to diagnose and fix issues directly where applications live.\n\nWithout this visibility, operators are flying blind during incidents. These skills turn you from a passive observer into an active problem solver.',
+    learningObjectives: ['Debug system state using built-in commands.', 'Analyze permissions and process resources.', 'Configure system behavior to ensure stability.'],
+    realWorldScenario: 'A production server is exhibiting strange behavior. You must use native Linux tools to investigate the root cause and restore normal operation.',
     commands: [
       {
         title: 'Write Strict Script',
@@ -207,6 +225,9 @@ const quests = [
       'Redirect job output to logs.',
       'Explain why scheduled jobs need observable output.'
     ],
+    conceptSummary: 'Linux is the foundational OS for most infrastructure. Mastering these system-level commands allows you to diagnose and fix issues directly where applications live.\n\nWithout this visibility, operators are flying blind during incidents. These skills turn you from a passive observer into an active problem solver.',
+    learningObjectives: ['Debug system state using built-in commands.', 'Analyze permissions and process resources.', 'Configure system behavior to ensure stability.'],
+    realWorldScenario: 'A production server is exhibiting strange behavior. You must use native Linux tools to investigate the root cause and restore normal operation.',
     commands: [
       {
         title: 'Write Cron Entry',
@@ -233,6 +254,9 @@ const quests = [
       'Read service status output.',
       'Understand restart policy basics.'
     ],
+    conceptSummary: 'Linux is the foundational OS for most infrastructure. Mastering these system-level commands allows you to diagnose and fix issues directly where applications live.\n\nWithout this visibility, operators are flying blind during incidents. These skills turn you from a passive observer into an active problem solver.',
+    learningObjectives: ['Debug system state using built-in commands.', 'Analyze permissions and process resources.', 'Configure system behavior to ensure stability.'],
+    realWorldScenario: 'A production server is exhibiting strange behavior. You must use native Linux tools to investigate the root cause and restore normal operation.',
     commands: [
       {
         title: 'Write Service Unit',
@@ -265,6 +289,9 @@ const quests = [
       'Avoid copying private keys into repos.',
       'Run remote inspection commands safely.'
     ],
+    conceptSummary: 'Linux is the foundational OS for most infrastructure. Mastering these system-level commands allows you to diagnose and fix issues directly where applications live.\n\nWithout this visibility, operators are flying blind during incidents. These skills turn you from a passive observer into an active problem solver.',
+    learningObjectives: ['Debug system state using built-in commands.', 'Analyze permissions and process resources.', 'Configure system behavior to ensure stability.'],
+    realWorldScenario: 'A production server is exhibiting strange behavior. You must use native Linux tools to investigate the root cause and restore normal operation.',
     commands: [
       {
         title: 'Create Public Key Placeholder',
@@ -297,6 +324,9 @@ const quests = [
       'Use archives for repeatable backup artifacts.',
       'Explain why untested backups are only assumptions.'
     ],
+    conceptSummary: 'Linux is the foundational OS for most infrastructure. Mastering these system-level commands allows you to diagnose and fix issues directly where applications live.\n\nWithout this visibility, operators are flying blind during incidents. These skills turn you from a passive observer into an active problem solver.',
+    learningObjectives: ['Debug system state using built-in commands.', 'Analyze permissions and process resources.', 'Configure system behavior to ensure stability.'],
+    realWorldScenario: 'A production server is exhibiting strange behavior. You must use native Linux tools to investigate the root cause and restore normal operation.',
     commands: [
       {
         title: 'Create Data File',
@@ -336,6 +366,9 @@ const quests = [
       'Separate permission failures from port conflicts.',
       'Use disk checks before chasing application bugs.'
     ],
+    conceptSummary: 'Linux is the foundational OS for most infrastructure. Mastering these system-level commands allows you to diagnose and fix issues directly where applications live.\n\nWithout this visibility, operators are flying blind during incidents. These skills turn you from a passive observer into an active problem solver.',
+    learningObjectives: ['Debug system state using built-in commands.', 'Analyze permissions and process resources.', 'Configure system behavior to ensure stability.'],
+    realWorldScenario: 'A production server is exhibiting strange behavior. You must use native Linux tools to investigate the root cause and restore normal operation.',
     commands: [
       {
         title: 'Inspect Permission Failure',
@@ -375,6 +408,9 @@ const quests = [
       'Fix executable permissions.',
       'Restart and verify service recovery.'
     ],
+    conceptSummary: 'Linux is the foundational OS for most infrastructure. Mastering these system-level commands allows you to diagnose and fix issues directly where applications live.\n\nWithout this visibility, operators are flying blind during incidents. These skills turn you from a passive observer into an active problem solver.',
+    learningObjectives: ['Debug system state using built-in commands.', 'Analyze permissions and process resources.', 'Configure system behavior to ensure stability.'],
+    realWorldScenario: 'A production server is exhibiting strange behavior. You must use native Linux tools to investigate the root cause and restore normal operation.',
     commands: [
       {
         title: 'Check Service Status',
@@ -422,6 +458,28 @@ export const linuxModule = createModule({
     'Automate repeatable administration tasks safely.',
     'Recover a failing service using evidence instead of guessing.'
   ],
+  keyConcepts: [
+    { title: 'Filesystem Hierarchy', description: 'Navigating and understanding standard Linux directory structures.', icon: '📁' },
+    { title: 'Permissions', description: 'Managing read, write, and execute permissions for users and groups.', icon: '🔐' },
+    { title: 'Process Management', description: 'Monitoring, backgrounding, and terminating system processes.', icon: '⚙️' },
+    { title: 'I/O Redirection', description: 'Piping output between commands and redirecting to files.', icon: '🔄' },
+    { title: 'Systemd Services', description: 'Managing long-running background services and daemons.', icon: '🛠️' },
+    { title: 'Cron Scheduling', description: 'Automating tasks to run at specific times or intervals.', icon: '⏱️' }
+  ],
+  commandCheatSheet: [
+    { command: 'pwd', description: 'Print working directory to see current path.' },
+    { command: 'ls -l', description: 'List files with detailed permissions and ownership.' },
+    { command: 'chmod +x', description: 'Make a file executable.' },
+    { command: 'ps aux', description: 'View all running processes.' },
+    { command: 'df -h', description: 'Check disk space in human-readable format.' },
+    { command: 'grep', description: 'Search for patterns within files or command output.' },
+    { command: 'systemctl status', description: 'Check the status of a systemd service.' },
+    { command: 'journalctl -u', description: 'View logs for a specific service.' },
+    { command: 'tar -czf', description: 'Create a compressed archive.' },
+    { command: 'ss -tulpn', description: 'List listening ports and their associated processes.' }
+  ],
+  learningPath: 'Start with navigating the filesystem and managing permissions safely. Move on to process and resource triage to keep servers healthy. Finish by managing services, writing strict scripts, and handling system recoveries.',
+  modulePrerequisites: ['Basic terminal navigation', 'Understanding of files and directories'],
   resources: [
     { name: 'Bash Reference Manual', url: 'https://www.gnu.org/software/bash/manual/', free: true },
     { name: 'Linux Command Handbook', url: 'https://www.freecodecamp.org/news/the-linux-commands-handbook/', free: true },

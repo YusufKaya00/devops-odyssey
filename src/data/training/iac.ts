@@ -31,7 +31,14 @@ const quests = [
         command: 'terraform apply',
         output: 'aws_instance.web: Creating...\naws_instance.web: Creation complete after 15s [id=i-0123456789]\nApply complete! Resources: 1 added, 0 changed, 0 destroyed.'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding Terraform Lifecycle: Init, Plan, Apply is critical for modern infrastructure management. Initialize a Terraform workspace, inspect plan, and provision resources. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of Terraform Lifecycle: Init, Plan, Apply',
+      'Configure tools and systems for Terraform Lifecycle: Init, Plan, Apply',
+      'Debug and resolve common errors related to Terraform Lifecycle: Init, Plan, Apply'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage Terraform Lifecycle: Init, Plan, Apply to restore service stability and optimize the deployment workflow.'
   }),
   createQuest({
     id: 'iac_tf_variables_outputs',
@@ -51,7 +58,14 @@ const quests = [
         command: 'echo "variable \\"instance_type\\" { default = \\"t2.micro\\" } output \\"public_ip\\" { value = \\"10.0.1.15\\" }" > variables.tf',
         output: 'Wrote variables.tf.'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding Variables and Outputs is critical for modern infrastructure management. Create dynamic inputs and output parameters in Terraform. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of Variables and Outputs',
+      'Configure tools and systems for Variables and Outputs',
+      'Debug and resolve common errors related to Variables and Outputs'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage Variables and Outputs to restore service stability and optimize the deployment workflow.'
   }),
   createQuest({
     id: 'iac_tf_state_drift',
@@ -71,7 +85,14 @@ const quests = [
         command: 'terraform state list',
         output: 'aws_instance.web\naws_security_group.sg_web\naws_vpc.main_vpc'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding State File and Drift is critical for modern infrastructure management. List managed resources inside the state file and inspect resource drift. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of State File and Drift',
+      'Configure tools and systems for State File and Drift',
+      'Debug and resolve common errors related to State File and Drift'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage State File and Drift to restore service stability and optimize the deployment workflow.'
   }),
   createQuest({
     id: 'iac_tf_providers_resources',
@@ -91,7 +112,14 @@ const quests = [
         command: 'echo "provider \\"aws\\" { region = \\"us-east-1\\" } resource \\"aws_instance\\" \\"web\\" { ami = \\"ami-0c55b159cbfafe1f0\\" }" > main.tf',
         output: 'Wrote main.tf.'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding Providers and Resource Addressing is critical for modern infrastructure management. Define provider configurations and address resources in manifests. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of Providers and Resource Addressing',
+      'Configure tools and systems for Providers and Resource Addressing',
+      'Debug and resolve common errors related to Providers and Resource Addressing'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage Providers and Resource Addressing to restore service stability and optimize the deployment workflow.'
   }),
   createQuest({
     id: 'iac_tf_modules',
@@ -111,7 +139,14 @@ const quests = [
         command: 'echo "module \\"vpc\\" { source = \\"./modules/vpc\\" cidr = \\"10.0.0.0/16\\" }" > modules.tf',
         output: 'Wrote modules.tf.'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding Reusable Modules is critical for modern infrastructure management. Call a local reusable module to bundle groups of resources. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of Reusable Modules',
+      'Configure tools and systems for Reusable Modules',
+      'Debug and resolve common errors related to Reusable Modules'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage Reusable Modules to restore service stability and optimize the deployment workflow.'
   }),
   createQuest({
     id: 'iac_tf_remote_backend',
@@ -131,7 +166,14 @@ const quests = [
         command: 'echo "terraform { backend \\"s3\\" { bucket = \\"tf-state\\" key = \\"prod/state\\" region = \\"us-east-1\\" } }" > backend.tf',
         output: 'Wrote backend.tf.'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding Remote Backends and Locking is critical for modern infrastructure management. Configure a remote S3 backend to store state files with locking mechanisms. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of Remote Backends and Locking',
+      'Configure tools and systems for Remote Backends and Locking',
+      'Debug and resolve common errors related to Remote Backends and Locking'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage Remote Backends and Locking to restore service stability and optimize the deployment workflow.'
   }),
   createQuest({
     id: 'iac_tf_import',
@@ -151,7 +193,14 @@ const quests = [
         command: 'terraform import aws_instance.web i-0123456789abcdef0',
         output: 'aws_instance.web: Importing from ID "i-0123456789abcdef0"...\naws_instance.web: Import prepared!\nImport successful!'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding Importing Existing Infrastructure is critical for modern infrastructure management. Import a live cloud resource into your local state tracking file. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of Importing Existing Infrastructure',
+      'Configure tools and systems for Importing Existing Infrastructure',
+      'Debug and resolve common errors related to Importing Existing Infrastructure'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage Importing Existing Infrastructure to restore service stability and optimize the deployment workflow.'
   }),
   createQuest({
     id: 'iac_tf_plan_review',
@@ -177,7 +226,14 @@ const quests = [
         command: 'terraform show tfplan',
         output: 'Terraform will perform the following actions:\n  # aws_db_instance.prod (forces replacement)\n  ~ engine_version = "14.1" -> "15.0" # force replacement'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding Plan Review and Destructive Changes is critical for modern infrastructure management. Save plan configurations and inspect details for dangerous resources recreation. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of Plan Review and Destructive Changes',
+      'Configure tools and systems for Plan Review and Destructive Changes',
+      'Debug and resolve common errors related to Plan Review and Destructive Changes'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage Plan Review and Destructive Changes to restore service stability and optimize the deployment workflow.'
   }),
   createQuest({
     id: 'iac_ansible_inventory',
@@ -203,7 +259,14 @@ const quests = [
         command: 'ansible-inventory -i hosts --list',
         output: '{\n  "web": { "hosts": ["web1.internal"] },\n  "db": { "hosts": ["db1.internal"] }\n}'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding Ansible Inventory Basics is critical for modern infrastructure management. Create an Ansible inventory file mapping hosts and server groups. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of Ansible Inventory Basics',
+      'Configure tools and systems for Ansible Inventory Basics',
+      'Debug and resolve common errors related to Ansible Inventory Basics'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage Ansible Inventory Basics to restore service stability and optimize the deployment workflow.'
   }),
   createQuest({
     id: 'iac_ansible_idempotency',
@@ -229,7 +292,14 @@ const quests = [
         command: 'ansible-playbook -i hosts site.yml --check',
         output: 'PLAY [Set up Nginx] **************************************\nTASK [Ensure nginx packages are installed] ***************\nok: [web1.internal]\nPLAY RECAP ***********************************************\nweb1.internal : ok=1 changed=0 failed=0'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding Playbooks and Idempotency is critical for modern infrastructure management. Write and dry-run an idempotent playbook that ensures Nginx packages are installed. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of Playbooks and Idempotency',
+      'Configure tools and systems for Playbooks and Idempotency',
+      'Debug and resolve common errors related to Playbooks and Idempotency'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage Playbooks and Idempotency to restore service stability and optimize the deployment workflow.'
   }),
   createQuest({
     id: 'iac_secret_handling',
@@ -249,7 +319,14 @@ const quests = [
         command: 'echo "TF_VAR_db_password=supersecret" > secret.env',
         output: 'Wrote secret.env.'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding Secrets Handling in IaC is critical for modern infrastructure management. Pass credentials safely using env variables instead of baking secrets into Git repositories. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of Secrets Handling in IaC',
+      'Configure tools and systems for Secrets Handling in IaC',
+      'Debug and resolve common errors related to Secrets Handling in IaC'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage Secrets Handling in IaC to restore service stability and optimize the deployment workflow.'
   }),
   createQuest({
     id: 'iac_capstone_drift_fix',
@@ -286,7 +363,14 @@ const quests = [
         command: 'terraform apply',
         output: 'aws_security_group.sg_web: Modifying...\naws_security_group.sg_web: Modifications complete.\nApply complete! Resources: 0 added, 1 changed, 0 destroyed.'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding Capstone: Detect and Fix Infrastructure Drift is critical for modern infrastructure management. Detect out-of-band configuration changes and apply Terraform to align real resources back to codebase declarations. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of Capstone: Detect and Fix Infrastructure Drift',
+      'Configure tools and systems for Capstone: Detect and Fix Infrastructure Drift',
+      'Debug and resolve common errors related to Capstone: Detect and Fix Infrastructure Drift'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage Capstone: Detect and Fix Infrastructure Drift to restore service stability and optimize the deployment workflow.'
   })
 ];
 
@@ -391,5 +475,27 @@ export const iacModule = createModule({
       answerIndex: 0,
       explanation: 'Passwords must stay out of git histories, injected via environment variables (like TF_VAR_pwd) or vault lookups.'
     }
-  ])
+  ]),
+  keyConcepts: [
+    { title: 'Core Architecture', description: 'Understand how components interact and scale in distributed environments.', icon: '🏗️' },
+    { title: 'State Management', description: 'Maintain consistency and reliability across automated deployments.', icon: '🗄️' },
+    { title: 'Security & Access', description: 'Implement least privilege and secure secret handling.', icon: '🔒' },
+    { title: 'Observability', description: 'Gain insights through logs, metrics, and tracing.', icon: '📊' },
+    { title: 'Automation', description: 'Reduce toil through automated pipelines and scripting.', icon: '⚙️' },
+    { title: 'Resilience', description: 'Design systems that withstand failure and recover quickly.', icon: '🛡️' }
+  ],
+  commandCheatSheet: [
+    { command: 'init', description: 'Initialize the working directory and configuration.' },
+    { command: 'apply', description: 'Apply the desired state to the environment.' },
+    { command: 'status', description: 'Check the current status of resources.' },
+    { command: 'logs', description: 'Retrieve operational logs for debugging.' },
+    { command: 'describe', description: 'Show detailed metadata and events.' },
+    { command: 'delete', description: 'Remove resources from the environment.' },
+    { command: 'validate', description: 'Verify configuration syntax and structure.' },
+    { command: 'plan', description: 'Preview changes before applying them.' },
+    { command: 'rollback', description: 'Revert to a previous stable state.' },
+    { command: 'scale', description: 'Adjust resource capacity up or down.' }
+  ],
+  learningPath: 'This module takes you on a journey from foundational setup to advanced operational troubleshooting. You will build practical skills needed to design, deploy, and manage production-grade systems.',
+  modulePrerequisites: ['Basic terminal and CLI navigation', 'Understanding of networking fundamentals'],
 });

@@ -19,7 +19,14 @@ const quests = [
         command: 'echo "on: [push] jobs: build: { runs-on: ubuntu-latest, steps: [ { name: Hello, run: echo hello } ] }" > workflow.yml',
         output: 'Wrote workflow.yml.'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding Pipeline Anatomy: Triggers and Jobs is critical for modern infrastructure management. Define a basic workflow pipeline triggered by repository push events. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of Pipeline Anatomy: Triggers and Jobs',
+      'Configure tools and systems for Pipeline Anatomy: Triggers and Jobs',
+      'Debug and resolve common errors related to Pipeline Anatomy: Triggers and Jobs'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage Pipeline Anatomy: Triggers and Jobs to restore service stability and optimize the deployment workflow.'
   }),
   createQuest({
     id: 'cicd_build_stage',
@@ -39,7 +46,14 @@ const quests = [
         command: 'echo "run: npm ci && npm run build" >> workflow.yml',
         output: 'Appended build command.'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding Pipeline Build Stage is critical for modern infrastructure management. Append compilation and code build steps to the pipeline. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of Pipeline Build Stage',
+      'Configure tools and systems for Pipeline Build Stage',
+      'Debug and resolve common errors related to Pipeline Build Stage'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage Pipeline Build Stage to restore service stability and optimize the deployment workflow.'
   }),
   createQuest({
     id: 'cicd_test_gate',
@@ -59,7 +73,14 @@ const quests = [
         command: 'echo "run: npm test" >> workflow.yml',
         output: 'Appended test command.'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding Test Gates and Failures is critical for modern infrastructure management. Integrate test runners to intercept and block broken builds. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of Test Gates and Failures',
+      'Configure tools and systems for Test Gates and Failures',
+      'Debug and resolve common errors related to Test Gates and Failures'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage Test Gates and Failures to restore service stability and optimize the deployment workflow.'
   }),
   createQuest({
     id: 'cicd_artifacts',
@@ -79,7 +100,14 @@ const quests = [
         command: 'echo "uses: actions/upload-artifact@v4 with: { name: dist, path: dist/ }" >> workflow.yml',
         output: 'Appended artifact upload.'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding Artifact Upload and Download is critical for modern infrastructure management. Persist built binaries and packages using workflow artifacts. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of Artifact Upload and Download',
+      'Configure tools and systems for Artifact Upload and Download',
+      'Debug and resolve common errors related to Artifact Upload and Download'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage Artifact Upload and Download to restore service stability and optimize the deployment workflow.'
   }),
   createQuest({
     id: 'cicd_dependency_cache',
@@ -99,7 +127,14 @@ const quests = [
         command: 'echo "uses: actions/cache@v4 with: { path: ~/.npm, key: npm-cache }" >> workflow.yml',
         output: 'Appended cache config.'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding Caching Build Dependencies is critical for modern infrastructure management. Implement dependency caches to accelerate step execution times. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of Caching Build Dependencies',
+      'Configure tools and systems for Caching Build Dependencies',
+      'Debug and resolve common errors related to Caching Build Dependencies'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage Caching Build Dependencies to restore service stability and optimize the deployment workflow.'
   }),
   createQuest({
     id: 'cicd_env_secrets',
@@ -119,7 +154,14 @@ const quests = [
         command: 'echo "env: { DB_PASS: ${{ secrets.DB_PASS }} }" >> workflow.yml',
         output: 'Appended secret reference.'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding Environment Secrets Handling is critical for modern infrastructure management. Reference sensitive API credentials securely inside pipeline builds. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of Environment Secrets Handling',
+      'Configure tools and systems for Environment Secrets Handling',
+      'Debug and resolve common errors related to Environment Secrets Handling'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage Environment Secrets Handling to restore service stability and optimize the deployment workflow.'
   }),
   createQuest({
     id: 'cicd_matrix_jobs',
@@ -139,7 +181,14 @@ const quests = [
         command: 'echo "strategy: { matrix: { node-version: [18, 20, 22] } }" >> workflow.yml',
         output: 'Appended matrix config.'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding Parallel Matrix Strategies is critical for modern infrastructure management. Execute validation playbooks across multiple runtime environments in parallel. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of Parallel Matrix Strategies',
+      'Configure tools and systems for Parallel Matrix Strategies',
+      'Debug and resolve common errors related to Parallel Matrix Strategies'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage Parallel Matrix Strategies to restore service stability and optimize the deployment workflow.'
   }),
   createQuest({
     id: 'cicd_manual_approval',
@@ -159,7 +208,14 @@ const quests = [
         command: 'echo "environment: production" >> workflow.yml',
         output: 'Appended environment environment.'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding Manual Approval Gates is critical for modern infrastructure management. Enable deployment protection rules to block pipeline releases until manual reviews pass. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of Manual Approval Gates',
+      'Configure tools and systems for Manual Approval Gates',
+      'Debug and resolve common errors related to Manual Approval Gates'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage Manual Approval Gates to restore service stability and optimize the deployment workflow.'
   }),
   createQuest({
     id: 'cicd_staging_deploy',
@@ -179,7 +235,14 @@ const quests = [
         command: 'echo "run: npm run deploy:staging" >> workflow.yml',
         output: 'Appended deployment script.'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding Deployment to Staging is critical for modern infrastructure management. Trigger automated deployment steps targeting staging servers. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of Deployment to Staging',
+      'Configure tools and systems for Deployment to Staging',
+      'Debug and resolve common errors related to Deployment to Staging'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage Deployment to Staging to restore service stability and optimize the deployment workflow.'
   }),
   createQuest({
     id: 'cicd_rollback',
@@ -199,7 +262,14 @@ const quests = [
         command: 'echo "run: npm run deploy:rollback" >> workflow.yml',
         output: 'Appended rollback script.'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding Rollback Workflows is critical for modern infrastructure management. Implement automatic redial-back plans to re-deploy previous versions if verification checks fail. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of Rollback Workflows',
+      'Configure tools and systems for Rollback Workflows',
+      'Debug and resolve common errors related to Rollback Workflows'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage Rollback Workflows to restore service stability and optimize the deployment workflow.'
   }),
   createQuest({
     id: 'cicd_security_scan',
@@ -219,7 +289,14 @@ const quests = [
         command: 'echo "run: npm run security-scan" >> workflow.yml',
         output: 'Appended security scan.'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding Security Scanning Gate is critical for modern infrastructure management. Add security vulnerability testing tools into integration loops. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of Security Scanning Gate',
+      'Configure tools and systems for Security Scanning Gate',
+      'Debug and resolve common errors related to Security Scanning Gate'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage Security Scanning Gate to restore service stability and optimize the deployment workflow.'
   }),
   createQuest({
     id: 'cicd_capstone_full_pipeline',
@@ -257,7 +334,14 @@ const quests = [
         command: 'git commit -m "ci: deploy automated pipeline"',
         output: '[main abc1234] ci: deploy automated pipeline\n 1 file changed, 14 insertions(+)'
       }
-    ]
+    ],
+    conceptSummary: 'Understanding Capstone: End-to-End Pipeline Delivery is critical for modern infrastructure management. Assemble, commit, and verify a complete pipeline configuration encompassing building, testing, scanning, and deploying. Doing so provides a foundation for automation and scalable deployments.\n\nMastering these concepts allows DevOps engineers to confidently manage resources, improve reliability, and accelerate delivery timelines without sacrificing stability.',
+    learningObjectives: [
+      'Explain the architectural principles of Capstone: End-to-End Pipeline Delivery',
+      'Configure tools and systems for Capstone: End-to-End Pipeline Delivery',
+      'Debug and resolve common errors related to Capstone: End-to-End Pipeline Delivery'
+    ],
+    realWorldScenario: 'Your team is facing production issues and you must leverage Capstone: End-to-End Pipeline Delivery to restore service stability and optimize the deployment workflow.'
   })
 ];
 
@@ -366,5 +450,27 @@ export const cicdModule = createModule({
       answerIndex: 0,
       explanation: 'SAST tools check source code structures for security vulnerabilities and secrets leaks prior to package builds.'
     }
-  ])
+  ]),
+  keyConcepts: [
+    { title: 'Core Architecture', description: 'Understand how components interact and scale in distributed environments.', icon: '🏗️' },
+    { title: 'State Management', description: 'Maintain consistency and reliability across automated deployments.', icon: '🗄️' },
+    { title: 'Security & Access', description: 'Implement least privilege and secure secret handling.', icon: '🔒' },
+    { title: 'Observability', description: 'Gain insights through logs, metrics, and tracing.', icon: '📊' },
+    { title: 'Automation', description: 'Reduce toil through automated pipelines and scripting.', icon: '⚙️' },
+    { title: 'Resilience', description: 'Design systems that withstand failure and recover quickly.', icon: '🛡️' }
+  ],
+  commandCheatSheet: [
+    { command: 'init', description: 'Initialize the working directory and configuration.' },
+    { command: 'apply', description: 'Apply the desired state to the environment.' },
+    { command: 'status', description: 'Check the current status of resources.' },
+    { command: 'logs', description: 'Retrieve operational logs for debugging.' },
+    { command: 'describe', description: 'Show detailed metadata and events.' },
+    { command: 'delete', description: 'Remove resources from the environment.' },
+    { command: 'validate', description: 'Verify configuration syntax and structure.' },
+    { command: 'plan', description: 'Preview changes before applying them.' },
+    { command: 'rollback', description: 'Revert to a previous stable state.' },
+    { command: 'scale', description: 'Adjust resource capacity up or down.' }
+  ],
+  learningPath: 'This module takes you on a journey from foundational setup to advanced operational troubleshooting. You will build practical skills needed to design, deploy, and manage production-grade systems.',
+  modulePrerequisites: ['Basic terminal and CLI navigation', 'Understanding of networking fundamentals'],
 });

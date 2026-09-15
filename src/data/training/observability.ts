@@ -19,7 +19,14 @@ const quests = [
         command: 'echo "metrics=numeric values, logs=discrete events, traces=request paths" > pillars.txt',
         output: 'Wrote pillars.txt.'
       }
-    ]
+    ],
+    conceptSummary: "Observability relies on three foundational signals to understand system health. Metrics provide aggregated numerical data over time, perfect for dashboards and alerting. Logs offer granular, discrete event records essential for debugging. Traces map the path of a single request across distributed services, highlighting latency and bottlenecks.\n\nTogether, these signals allow engineering teams to identify that a problem exists (metrics), where it is located (traces), and exactly what caused it (logs).",
+    learningObjectives: [
+        "Explain the purpose and differences of the three observability pillars.",
+        "Identify the appropriate signal type for different troubleshooting scenarios.",
+        "Correlate system events using telemetry data."
+    ],
+    realWorldScenario: "During a Black Friday traffic spike, checkout latency increases. You use metrics to spot the CPU spike, traces to find the slow payment microservice, and logs to identify a database timeout error."
   }),
   createQuest({
     id: 'obs_prometheus_scrape',
@@ -45,7 +52,14 @@ const quests = [
         command: 'promtool check config prometheus.yml',
         output: 'Checking prometheus.yml\n  SUCCESS: 0 rule files found'
       }
-    ]
+    ],
+    conceptSummary: "Prometheus operates on a pull-based model, actively scraping metrics from configured targets. A scrape configuration dictates which endpoints to query, how often to query them, and what authentication or parameters to use.\n\nThis decoupled architecture means applications don't need to push data; they simply expose an HTTP endpoint (typically `/metrics`) and Prometheus handles the retrieval and storage.",
+    learningObjectives: [
+        "Configure a Prometheus scrape job.",
+        "Examine target metrics endpoints.",
+        "Validate configuration files using promtool."
+    ],
+    realWorldScenario: "You are deploying a new internal API. You must configure Prometheus to discover its `/metrics` endpoint and scrape it every 10 seconds without dropping labels."
   }),
   createQuest({
     id: 'obs_promql_queries',
@@ -65,7 +79,14 @@ const quests = [
         command: 'echo "rate(http_requests_total[5m])" > queries.promql',
         output: 'Wrote queries.promql.'
       }
-    ]
+    ],
+    conceptSummary: "PromQL (Prometheus Query Language) is a powerful functional query language that lets you select and aggregate time series data in real time. Unlike SQL, it is specifically designed for multi-dimensional time series data.\n\nUsing functions like `rate()`, you can transform raw counter data (which only goes up) into actionable metrics like requests-per-second, enabling accurate alerting and graphing.",
+    learningObjectives: [
+        "Write PromQL queries for time series data.",
+        "Calculate rates of change for counter metrics.",
+        "Filter and aggregate metrics using labels."
+    ],
+    realWorldScenario: "The operations team reports slow API responses. You need to write a PromQL query to calculate the per-second error rate over the last 5 minutes to verify the issue."
   }),
   createQuest({
     id: 'obs_alert_rule',
@@ -91,7 +112,14 @@ const quests = [
         command: 'promtool check rules alert.rules',
         output: 'Checking alert.rules\n  SUCCESS: 1 rules found'
       }
-    ]
+    ],
+    conceptSummary: "Alerting rules in Prometheus allow you to define alert conditions based on PromQL expressions. When a condition is met for a specified duration, an alert is fired.\n\nBy defining a `for` duration, you prevent temporary spikes or network blips from triggering false positives, ensuring that on-call engineers are only woken up for sustained, genuine issues.",
+    learningObjectives: [
+        "Design Prometheus alert rules.",
+        "Apply duration clauses to reduce alert noise.",
+        "Test and validate rule syntax."
+    ],
+    realWorldScenario: "Intermittent network blips keep waking up the on-call engineer. You need to implement a 5-minute duration threshold on the high CPU alert to reduce alert fatigue."
   }),
   createQuest({
     id: 'obs_grafana_dashboard',
@@ -111,7 +139,14 @@ const quests = [
         command: 'echo "{ \\"panels\\": [ { \\"type\\": \\"timeseries\\", \\"title\\": \\"HTTP Rate\\", \\"targets\\": [ { \\"expr\\": \\"rate(http_requests_total[1m])\\" } ] } ] }" > dashboard.json',
         output: 'Wrote dashboard.json.'
       }
-    ]
+    ],
+    conceptSummary: "Grafana dashboards visualize the telemetry data collected by systems like Prometheus. Defining dashboards as JSON files enables Dashboard-as-Code, bringing version control and peer review to observability.\n\nThis approach ensures that dashboard configurations are reproducible, easily shared between environments, and can be automatically provisioned alongside the infrastructure.",
+    learningObjectives: [
+        "Model Grafana dashboard configurations in JSON.",
+        "Define time-series panels using query targets.",
+        "Implement Dashboard-as-Code practices."
+    ],
+    realWorldScenario: "A new microservice has been deployed, and the team needs a standard monitoring dashboard. You write a JSON configuration to provision panels for request latency and error rates."
   }),
   createQuest({
     id: 'obs_log_correlation',
@@ -131,7 +166,14 @@ const quests = [
         command: 'grep "trace_id=abc-123" app.log',
         output: '2026-05-25T12:00:01 INFO gateway trace_id=abc-123 Proxying request to backend\n2026-05-25T12:00:02 ERROR backend trace_id=abc-123 Connection timeout on database'
       }
-    ]
+    ],
+    conceptSummary: "Log correlation is the practice of linking discrete log entries across multiple distributed components to a single transaction. This is typically achieved by injecting a unique Trace ID into every log message associated with a request.\n\nWithout correlation IDs, debugging a microservices architecture is like searching for a needle in a haystack; with them, you can trace the exact lifecycle of a failing request.",
+    learningObjectives: [
+        "Trace correlation context IDs across log streams.",
+        "Isolate faults in distributed systems.",
+        "Filter and search structured log data."
+    ],
+    realWorldScenario: "A user reports a failed checkout. You take their correlation ID and search across the gateway, billing, and inventory service logs to pinpoint the exact failure."
   }),
   createQuest({
     id: 'obs_slo_error_budget',
@@ -151,7 +193,14 @@ const quests = [
         command: 'echo "SLI=success_requests/total_requests SLO=99.9% error_budget=0.1%" > slo.txt',
         output: 'Wrote slo.txt.'
       }
-    ]
+    ],
+    conceptSummary: "Service Level Objectives (SLOs) define the target reliability for a service from the user's perspective, using Service Level Indicators (SLIs). The Error Budget is the inverse of the SLO (e.g., a 99.9% SLO leaves a 0.1% error budget).\n\nError budgets bridge the gap between development and operations. If the budget is full, teams can release quickly; if depleted, feature releases freeze to focus on reliability fixes.",
+    learningObjectives: [
+        "Formulate SLI success metrics.",
+        "Define and calculate Service Level Objectives.",
+        "Manage deployment velocity using error budgets."
+    ],
+    realWorldScenario: "Your team has consumed its 30-day error budget due to recent outages. You must halt feature deployments and dedicate the next sprint to stability improvements."
   }),
   createQuest({
     id: 'obs_alert_routing',
@@ -171,7 +220,14 @@ const quests = [
         command: 'echo "route: { receiver: pagerduty, matchers: [ severity=critical ] }" > alertmanager.yml',
         output: 'Wrote alertmanager.yml.'
       }
-    ]
+    ],
+    conceptSummary: "Alertmanager handles alerts sent by Prometheus, taking care of deduplication, grouping, and routing them to the correct receiver integrations (e.g., PagerDuty, Slack). \n\nProper routing ensures that critical, actionable alerts wake up the on-call engineer, while informational warnings are routed to a chat channel or email for next-day review.",
+    learningObjectives: [
+        "Configure Alertmanager routing trees.",
+        "Dispatch alerts based on severity labels.",
+        "Implement alert grouping and deduplication."
+    ],
+    realWorldScenario: "The engineering team is overwhelmed by alert noise. You configure routing rules to send \"Critical\" alerts to PagerDuty and \"Warning\" alerts to a Slack channel."
   }),
   createQuest({
     id: 'obs_runbook',
@@ -191,7 +247,14 @@ const quests = [
         command: 'echo "# Runbook: HighErrorRate\n1. Inspect app container logs.\n2. Verify database connection status.\n3. Roll back if deployment just occurred." > runbook.md',
         output: 'Wrote runbook.md.'
       }
-    ]
+    ],
+    conceptSummary: "Incident response runbooks are step-by-step guides that operators follow when a specific alert triggers. They outline the triage, verification, and mitigation steps needed to restore service.\n\nA good runbook minimizes cognitive load during high-stress outages, standardizes the response process, and dramatically reduces Mean Time to Resolution (MTTR).",
+    learningObjectives: [
+        "Write step-by-step incident runbooks.",
+        "Identify key verification checks for service health.",
+        "Document clear rollback procedures."
+    ],
+    realWorldScenario: "A critical database alert fires at 2 AM. You open the runbook, follow the exact steps to verify connections and restart the replica, resolving the incident in minutes."
   }),
   createQuest({
     id: 'obs_dashboard_improvement',
@@ -211,7 +274,14 @@ const quests = [
         command: 'echo "expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode=\'idle\'}[5m])) * 100)" >> dashboard.json',
         output: 'Appended panel config.'
       }
-    ]
+    ],
+    conceptSummary: "Post-incident reviews often reveal blind spots in observability. Iteratively improving dashboards by adding missing metrics ensures better visibility for future incidents.\n\nBy correlating application-level metrics (like HTTP errors) with infrastructure-level metrics (like CPU or Memory utilization), teams gain a holistic view of system performance.",
+    learningObjectives: [
+        "Refine dashboard panel queries post-incident.",
+        "Correlate application and infrastructure metrics.",
+        "Improve visualization clarity."
+    ],
+    realWorldScenario: "After an outage caused by CPU starvation, you update the main service dashboard to include a CPU utilization gauge next to the API latency chart."
   }),
   createQuest({
     id: 'obs_capstone_error_investigation',
@@ -248,7 +318,14 @@ const quests = [
         command: 'cat runbook.md',
         output: '# Runbook: HighErrorRate\n1. Inspect app container logs.\n2. Verify database connection status.\n3. Roll back if deployment just occurred.'
       }
-    ]
+    ],
+    conceptSummary: "Incident investigation is a structured process that combines multiple observability tools. It starts with an alert, moves to metrics for broad context, dives into logs for specific errors, and follows a runbook for resolution.\n\nThis capstone simulates a real-world incident response, requiring you to synthesize your knowledge of rules, logs, and procedural documentation to restore system health.",
+    learningObjectives: [
+        "Perform a structured incident triage procedure.",
+        "Correlate signals from alerts and logs.",
+        "Execute recovery actions based on runbook guidance."
+    ],
+    realWorldScenario: "A sev-1 alert fires for the payment service. You must quickly verify the alert, trace the errors in the logs, and follow the runbook to rollback the bad deployment."
   })
 ];
 
@@ -358,5 +435,56 @@ export const observabilityModule = createModule({
       answerIndex: 0,
       explanation: 'Runbooks provide instant instructions for responding to alerts, reducing MTTR and operator panic.'
     }
-  ])
+  ]),
+  keyConcepts: [
+    {
+      "title": "Metrics",
+      "description": "Aggregated numeric data over time.",
+      "icon": "📈"
+    },
+    {
+      "title": "Logs",
+      "description": "Discrete text records of specific events.",
+      "icon": "📝"
+    },
+    {
+      "title": "Traces",
+      "description": "The lifecycle path of a single request.",
+      "icon": "🔗"
+    },
+    {
+      "title": "SLIs & SLOs",
+      "description": "Metrics and targets defining reliability.",
+      "icon": "🎯"
+    },
+    {
+      "title": "Error Budgets",
+      "description": "Acceptable unreliability allowing speed.",
+      "icon": "💰"
+    },
+    {
+      "title": "Runbooks",
+      "description": "Actionable guides for incident response.",
+      "icon": "📘"
+    }
+  ],
+  commandCheatSheet: [
+    {
+      "command": "promtool check config prometheus.yml",
+      "description": "Validates Prometheus config syntax."
+    },
+    {
+      "command": "promtool check rules alert.rules",
+      "description": "Validates alert rule expressions."
+    },
+    {
+      "command": "rate(http_requests_total[5m])",
+      "description": "PromQL: Calculates per-second average rate."
+    }
+  ],
+  learningPath: "Begin by mastering the three pillars of observability. Then, learn to write PromQL queries and alert rules, ultimately culminating in real-world incident response and postmortem practices.",
+  modulePrerequisites: [
+    "Basic understanding of HTTP endpoints.",
+    "Familiarity with JSON/YAML formatting."
+  ]
 });

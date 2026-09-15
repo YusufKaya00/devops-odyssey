@@ -12,6 +12,9 @@ const quests = [
       'Configure listen port and root directory.',
       'Validate configuration syntax using NGINX test command.'
     ],
+    conceptSummary: 'Proper server configuration sits at the boundary between the internet and your applications. A misconfigured web server can take down an entire platform.\n\nMastering proxying, load balancing, and safe reloads ensures that your infrastructure can scale gracefully and survive high traffic without operator panic.',
+    learningObjectives: ['Configure web server routing and proxies.', 'Analyze server logs to identify bottlenecks or errors.', 'Deploy configuration changes safely with zero downtime.'],
+    realWorldScenario: 'A new backend service has been deployed, but traffic is not reaching it. You must update and validate the web server configuration to restore service access.',
     commands: [
       {
         title: 'Create Static Site Configuration',
@@ -38,6 +41,9 @@ const quests = [
       'Configure proxy_pass directives.',
       'Map external requests to internal application ports.'
     ],
+    conceptSummary: 'Proper server configuration sits at the boundary between the internet and your applications. A misconfigured web server can take down an entire platform.\n\nMastering proxying, load balancing, and safe reloads ensures that your infrastructure can scale gracefully and survive high traffic without operator panic.',
+    learningObjectives: ['Configure web server routing and proxies.', 'Analyze server logs to identify bottlenecks or errors.', 'Deploy configuration changes safely with zero downtime.'],
+    realWorldScenario: 'A new backend service has been deployed, but traffic is not reaching it. You must update and validate the web server configuration to restore service access.',
     commands: [
       {
         title: 'Configure Reverse Proxy',
@@ -64,6 +70,9 @@ const quests = [
       'Configure load-balanced proxying.',
       'Distribute traffic across multiple application instances.'
     ],
+    conceptSummary: 'Proper server configuration sits at the boundary between the internet and your applications. A misconfigured web server can take down an entire platform.\n\nMastering proxying, load balancing, and safe reloads ensures that your infrastructure can scale gracefully and survive high traffic without operator panic.',
+    learningObjectives: ['Configure web server routing and proxies.', 'Analyze server logs to identify bottlenecks or errors.', 'Deploy configuration changes safely with zero downtime.'],
+    realWorldScenario: 'A new backend service has been deployed, but traffic is not reaching it. You must update and validate the web server configuration to restore service access.',
     commands: [
       {
         title: 'Create Upstream Pool Configuration',
@@ -90,6 +99,9 @@ const quests = [
       'Define caching headers for static assets.',
       'Improve website performance and decrease load times.'
     ],
+    conceptSummary: 'Proper server configuration sits at the boundary between the internet and your applications. A misconfigured web server can take down an entire platform.\n\nMastering proxying, load balancing, and safe reloads ensures that your infrastructure can scale gracefully and survive high traffic without operator panic.',
+    learningObjectives: ['Configure web server routing and proxies.', 'Analyze server logs to identify bottlenecks or errors.', 'Deploy configuration changes safely with zero downtime.'],
+    realWorldScenario: 'A new backend service has been deployed, but traffic is not reaching it. You must update and validate the web server configuration to restore service access.',
     commands: [
       {
         title: 'Enable Compression and Caching',
@@ -116,6 +128,9 @@ const quests = [
       'Filter access logs for error codes.',
       'Deduce application errors from response status codes.'
     ],
+    conceptSummary: 'Proper server configuration sits at the boundary between the internet and your applications. A misconfigured web server can take down an entire platform.\n\nMastering proxying, load balancing, and safe reloads ensures that your infrastructure can scale gracefully and survive high traffic without operator panic.',
+    learningObjectives: ['Configure web server routing and proxies.', 'Analyze server logs to identify bottlenecks or errors.', 'Deploy configuration changes safely with zero downtime.'],
+    realWorldScenario: 'A new backend service has been deployed, but traffic is not reaching it. You must update and validate the web server configuration to restore service access.',
     commands: [
       {
         title: 'View Access Logs',
@@ -142,6 +157,9 @@ const quests = [
       'Apply NGINX changes gracefully with zero downtime.',
       'Describe service state lifecycle.'
     ],
+    conceptSummary: 'Proper server configuration sits at the boundary between the internet and your applications. A misconfigured web server can take down an entire platform.\n\nMastering proxying, load balancing, and safe reloads ensures that your infrastructure can scale gracefully and survive high traffic without operator panic.',
+    learningObjectives: ['Configure web server routing and proxies.', 'Analyze server logs to identify bottlenecks or errors.', 'Deploy configuration changes safely with zero downtime.'],
+    realWorldScenario: 'A new backend service has been deployed, but traffic is not reaching it. You must update and validate the web server configuration to restore service access.',
     commands: [
       {
         title: 'Reload NGINX Config',
@@ -168,6 +186,9 @@ const quests = [
       'Switch upstream servers in NGINX config.',
       'Trigger graceful reload to apply routing changes.'
     ],
+    conceptSummary: 'Proper server configuration sits at the boundary between the internet and your applications. A misconfigured web server can take down an entire platform.\n\nMastering proxying, load balancing, and safe reloads ensures that your infrastructure can scale gracefully and survive high traffic without operator panic.',
+    learningObjectives: ['Configure web server routing and proxies.', 'Analyze server logs to identify bottlenecks or errors.', 'Deploy configuration changes safely with zero downtime.'],
+    realWorldScenario: 'A new backend service has been deployed, but traffic is not reaching it. You must update and validate the web server configuration to restore service access.',
     commands: [
       {
         title: 'Update Upstream Target',
@@ -194,6 +215,9 @@ const quests = [
       'Apply rate limits to sensitive locations.',
       'Explain how rate limits protect service reliability.'
     ],
+    conceptSummary: 'Proper server configuration sits at the boundary between the internet and your applications. A misconfigured web server can take down an entire platform.\n\nMastering proxying, load balancing, and safe reloads ensures that your infrastructure can scale gracefully and survive high traffic without operator panic.',
+    learningObjectives: ['Configure web server routing and proxies.', 'Analyze server logs to identify bottlenecks or errors.', 'Deploy configuration changes safely with zero downtime.'],
+    realWorldScenario: 'A new backend service has been deployed, but traffic is not reaching it. You must update and validate the web server configuration to restore service access.',
     commands: [
       {
         title: 'Create Rate Limit Configuration',
@@ -220,6 +244,9 @@ const quests = [
       'Run dry-run certificate renewal.',
       'Understand automated cron renewal hooks.'
     ],
+    conceptSummary: 'Proper server configuration sits at the boundary between the internet and your applications. A misconfigured web server can take down an entire platform.\n\nMastering proxying, load balancing, and safe reloads ensures that your infrastructure can scale gracefully and survive high traffic without operator panic.',
+    learningObjectives: ['Configure web server routing and proxies.', 'Analyze server logs to identify bottlenecks or errors.', 'Deploy configuration changes safely with zero downtime.'],
+    realWorldScenario: 'A new backend service has been deployed, but traffic is not reaching it. You must update and validate the web server configuration to restore service access.',
     commands: [
       {
         title: 'Execute Certbot Dry Run',
@@ -245,6 +272,9 @@ const quests = [
       'Correct application target port details.',
       'Verify syntax and reload configuration to restore services.'
     ],
+    conceptSummary: 'Proper server configuration sits at the boundary between the internet and your applications. A misconfigured web server can take down an entire platform.\n\nMastering proxying, load balancing, and safe reloads ensures that your infrastructure can scale gracefully and survive high traffic without operator panic.',
+    learningObjectives: ['Configure web server routing and proxies.', 'Analyze server logs to identify bottlenecks or errors.', 'Deploy configuration changes safely with zero downtime.'],
+    realWorldScenario: 'A new backend service has been deployed, but traffic is not reaching it. You must update and validate the web server configuration to restore service access.',
     commands: [
       {
         title: 'Inspect Current Configuration',
@@ -286,6 +316,28 @@ export const serverManagementModule = createModule({
     'Reload and roll out configuration safely.',
     'Set up rate limits and TLS certificates.'
   ],
+  keyConcepts: [
+    { title: 'Reverse Proxy', description: 'Sitting in front of backend servers to route client requests.', icon: '🔀' },
+    { title: 'Load Balancing', description: 'Distributing traffic across multiple servers for reliability.', icon: '⚖️' },
+    { title: 'Log Analysis', description: 'Parsing access and error logs to identify application issues.', icon: '📜' },
+    { title: 'Zero Downtime', description: 'Applying configurations and updates without dropping traffic.', icon: '✨' },
+    { title: 'Rate Limiting', description: 'Protecting endpoints from abuse by restricting request frequency.', icon: '🛑' },
+    { title: 'TLS Renewal', description: 'Automating certificate updates to prevent security warnings.', icon: '🔐' }
+  ],
+  commandCheatSheet: [
+    { command: 'nginx -t', description: 'Test NGINX configuration for syntax errors.' },
+    { command: 'systemctl reload nginx', description: 'Gracefully apply new NGINX config.' },
+    { command: 'tail -f access.log', description: 'Watch server access logs in real-time.' },
+    { command: 'grep "500" error.log', description: 'Find server errors in the logs.' },
+    { command: 'certbot renew', description: 'Renew Let\'s Encrypt certificates.' },
+    { command: 'systemctl restart nginx', description: 'Hard restart the NGINX service.' },
+    { command: 'gzip on;', description: 'Enable compression in NGINX config.' },
+    { command: 'proxy_pass', description: 'NGINX directive to forward requests to a backend.' },
+    { command: 'upstream', description: 'NGINX block to define a pool of backend servers.' },
+    { command: 'limit_req', description: 'NGINX directive to apply rate limiting.' }
+  ],
+  learningPath: 'Start by serving static sites and configuring reverse proxies. Progress into upstream load balancing, performance tuning, and log analysis. Finish by mastering zero-downtime rollouts and server hardening.',
+  modulePrerequisites: ['Basic Linux administration skills', 'Understanding of HTTP concepts'],
   resources: [
     { name: 'The NGINX Handbook', url: 'https://www.freecodecamp.org/news/the-nginx-handbook/', free: true }
   ],

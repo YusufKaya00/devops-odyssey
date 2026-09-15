@@ -22,12 +22,18 @@ export const gitDeepDiveQuests: Quest[] = [
     ],
     verificationCommand: "Checks if devops-sandbox/.git exists and has at least one commit.",
     validatorKey: "git_init",
+    conceptSummary: "A Git repository is a hidden .git directory that stores the complete history of your project as a series of snapshots. Unlike older version control systems that track file differences, Git stores complete snapshots of your project state at each commit point.\n\nWhen you run `git init`, Git creates the .git directory containing the object database, refs, HEAD pointer, and configuration. Every subsequent Git command reads from or writes to this directory. Understanding this foundation helps you reason about what Git is actually doing behind every command.",
+    learningObjectives: ["Initialize a new Git repository from scratch","Inspect the .git directory structure","Stage files and create your first commit","Read the commit log to verify your work"],
+    realWorldScenario: "You have just joined a startup and your first task is to set up version control for a new microservice project. The team lead asks you to initialize the Git repository, add the initial README, and make the first commit so the CI/CD pipeline can detect the repo.",
     hint: "Think in three places: working tree, staging area, and repository history.",
     interactiveSteps: [
       {
         title: "Create the .git Database",
         explanation: "A Git repository is a normal project folder plus a hidden .git directory. That directory stores objects, refs, config, hooks, and the index. DevOps teams rely on this because application code, Terraform, Kubernetes manifests, and pipeline YAML all need versioned history.",
         expectedCommand: "git init",
+        commandFlags: [],
+        bestPractices: ["Initialize Git before writing any code to track all changes from the start"],
+        realWorldContext: "Every codebase starts here. CI/CD systems often clone and run git init internally during job setup.",
         hint: "Initialize version tracking in the current sandbox directory.",
         mockOutput: "Initialized empty Git repository in /workspace/devops-sandbox/.git/"
       },
@@ -35,6 +41,9 @@ export const gitDeepDiveQuests: Quest[] = [
         title: "Read the Working Tree State",
         explanation: "git status is your safety dashboard. It tells you which branch HEAD points to, which files are untracked, which changes are staged, and whether the next commit is ready.",
         expectedCommand: "git status",
+        commandFlags: [],
+        bestPractices: ["Run git status frequently to verify you are on the right branch and staging the right files"],
+        realWorldContext: "Before pushing any deployment code, engineers always check status to avoid accidental commits.",
         hint: "Ask Git what it sees before changing anything.",
         mockOutput: "On branch main\n\nNo commits yet\n\nUntracked files:\n  README.md\n\nnothing added to commit but untracked files present"
       },
@@ -42,6 +51,9 @@ export const gitDeepDiveQuests: Quest[] = [
         title: "Stage the README Snapshot",
         explanation: "git add copies the current content of a file into the index. The index is not just a list of names; it is the exact snapshot that the next commit will record.",
         expectedCommand: "git add README.md",
+        commandFlags: [],
+        bestPractices: ["Stage files individually instead of using git add . to maintain atomic commits"],
+        realWorldContext: "In DevOps, carefully selecting which configuration files to stage prevents committing local test values.",
         hint: "Stage only README.md so the next commit is deliberate.",
         mockOutput: "Staged README.md in the index."
       },
@@ -49,6 +61,9 @@ export const gitDeepDiveQuests: Quest[] = [
         title: "Create the Root Commit",
         explanation: "A commit is an immutable snapshot plus metadata: author, message, timestamp, and parent commit references. The first commit has no parent, so Git calls it a root commit.",
         expectedCommand: "git commit -m \"First commit\"",
+        commandFlags: [{ flag: "-m", description: "Pass the commit message directly via command line" }],
+        bestPractices: ["Use the imperative mood for commit messages, e.g., 'Add feature' not 'Added feature'"],
+        realWorldContext: "Commit logs are parsed by release automation tools to generate changelogs and determine semantic version bumps.",
         hint: "Commit the staged snapshot with a short message.",
         mockOutput: "[main (root-commit) aed1d1a] First commit\n 1 file changed, 2 insertions(+)\n create mode 100644 README.md"
       },
@@ -56,6 +71,9 @@ export const gitDeepDiveQuests: Quest[] = [
         title: "Read Compact History",
         explanation: "git log is how you audit history. DevOps work often requires finding when a pipeline, deployment manifest, or infrastructure variable changed.",
         expectedCommand: "git log --oneline --decorate",
+        commandFlags: [{ flag: "--oneline", description: "Compact output showing only SHA and message" }, { flag: "--decorate", description: "Shows branch and tag labels next to commits" }],
+        bestPractices: ["Use compact logs to quickly understand the sequence of recent deployments or fixes"],
+        realWorldContext: "During incident response, a quick log scan helps identify which recent commit might have introduced the bug.",
         hint: "Use a compact log with branch labels.",
         mockOutput: "aed1d1a (HEAD -> main) First commit"
       }
@@ -82,26 +100,38 @@ export const gitDeepDiveQuests: Quest[] = [
     ],
     verificationCommand: "Browser simulation validates each step; local validator is not required for this extended lab.",
     validatorKey: "git_status_diff",
+    conceptSummary: "Git's status and diff commands are your diagnostic tools. `git status` shows you the high-level state of your working tree — which files are untracked, modified, or staged. `git diff` goes deeper, showing the exact line-by-line changes.\n\nUnderstanding the difference between unstaged changes (`git diff`) and staged changes (`git diff --staged`) is crucial. The staging area (index) acts as a buffer between your working directory and the repository, giving you precise control over what goes into each commit.",
+    learningObjectives: ["Use git status to identify file states","Compare unstaged changes with git diff","Compare staged changes with git diff --staged","Create focused, single-purpose commits"],
+    realWorldScenario: "You are working on two bug fixes simultaneously. Before committing, you need to review exactly which changes belong to which fix. Using status and diff, you separate the changes into clean, reviewable commits that your team lead can approve independently.",
     hint: "Unstaged diff answers 'what changed in files'; staged diff answers 'what will be committed'.",
     interactiveSteps: [
       {
         title: "Create a Config File",
         explanation: "Configuration files are a daily DevOps artifact. Before committing them, you should inspect exactly what changed so secrets, local ports, or machine-only values do not slip into history.",
         expectedCommand: "echo \"PORT=8080\" > app.conf",
+        commandFlags: [],
+        bestPractices: ["Use environment variables instead of hardcoded values for configuration"],
+        realWorldContext: "Configuration files are often generated dynamically in CI/CD pipelines.",
         hint: "Write a simple key/value config file.",
         mockOutput: "Wrote app.conf with PORT=8080."
       },
       {
         title: "Inspect Unstaged Changes",
-        explanation: "git diff compares the working tree to the index. Because app.conf is not staged yet, this diff represents work that exists only in your folder.",
+        explanation: "git diff compares tracked working-tree content to the index. A new, untracked app.conf is absent from the index, so this command produces no output yet. Use git status to see the untracked file, then stage it and inspect git diff --staged.",
         expectedCommand: "git diff",
-        hint: "Check the unstaged file contents.",
-        mockOutput: "diff --git a/app.conf b/app.conf\nnew file mode 100644\n+PORT=8080"
+        commandFlags: [],
+        bestPractices: ["Always review diffs before staging to catch debugging code or typos"],
+        realWorldContext: "Reviewing unstaged changes ensures passwords or AWS keys aren't accidentally saved in config files.",
+        hint: "An empty diff is expected for an untracked file; git status still lists it.",
+        mockOutput: ""
       },
       {
         title: "Stage the Config File",
         explanation: "Staging is the point where you decide what belongs in the next commit. Good commits are small, reviewable, and focused on one idea.",
         expectedCommand: "git add app.conf",
+        commandFlags: [],
+        bestPractices: ["Group related file changes together in the staging area"],
+        realWorldContext: "Staging acts as a safety buffer, allowing you to prepare the perfect commit before finalizing it.",
         hint: "Move app.conf into the index.",
         mockOutput: "Staged app.conf."
       },
@@ -109,6 +139,9 @@ export const gitDeepDiveQuests: Quest[] = [
         title: "Inspect the Staged Snapshot",
         explanation: "git diff --staged compares the index to the last commit. This is your final review before committing.",
         expectedCommand: "git diff --staged",
+        commandFlags: [{ flag: "--staged", description: "Compares the staging area against the last commit" }],
+        bestPractices: ["Make a habit of running git diff --staged as the final step before git commit"],
+        realWorldContext: "This is the exact payload that will be reviewed in the Pull Request.",
         acceptedCommands: ["git diff --cached"],
         hint: "Use the staged diff form.",
         mockOutput: "diff --git a/app.conf b/app.conf\nnew file mode 100644\n+PORT=8080"
@@ -117,6 +150,9 @@ export const gitDeepDiveQuests: Quest[] = [
         title: "Commit a Focused Change",
         explanation: "The message should explain why the change exists. In real teams this supports reviews, incident timelines, and rollback decisions.",
         expectedCommand: "git commit -m \"Add app config\"",
+        commandFlags: [{ flag: "-m", description: "Inline commit message" }],
+        bestPractices: ["Commit messages should focus on WHY the change was made, not just WHAT changed"],
+        realWorldContext: "Clear commit messages are vital for compliance audits in heavily regulated industries.",
         hint: "Commit only the staged config file.",
         mockOutput: "[main b7c44d2] Add app config\n 1 file changed, 1 insertion(+)\n create mode 100644 app.conf"
       }
@@ -143,19 +179,28 @@ export const gitDeepDiveQuests: Quest[] = [
     ],
     verificationCommand: "Browser simulation validates each step; local validator is not required for this extended lab.",
     validatorKey: "git_ignore",
+    conceptSummary: "The .gitignore file tells Git which files and directories to exclude from version control. This is essential for keeping secrets, build artifacts, and environment-specific files out of your repository.\n\nPatterns in .gitignore use glob syntax: `*.log` ignores all log files, `node_modules/` ignores the entire directory, and `!important.log` negates a previous ignore rule. The .gitignore file itself should be committed so all team members share the same ignore rules.",
+    learningObjectives: ["Create a .gitignore file with glob patterns","Prevent secrets and environment files from being tracked","Audit ignored files with git status --ignored","Understand the security implications of tracked secrets"],
+    realWorldScenario: "A junior developer accidentally committed an .env file containing database credentials to the shared repository. Your team lead asks you to set up proper .gitignore rules to prevent this from happening again, and to audit what files are currently being ignored.",
     hint: "Never commit real secrets. Ignoring a file does not remove it if it is already tracked.",
     interactiveSteps: [
       {
         title: "Create a Local Secret File",
         explanation: "DevOps repos often have .env files for local development. The file can be useful locally, but it must not be committed because history is durable and frequently replicated.",
         expectedCommand: "echo \"API_TOKEN=local-only\" > .env",
+        commandFlags: [],
+        bestPractices: ["Never store real secrets in a .env file that might be tracked"],
+        realWorldContext: "Leaked API tokens in Git repositories are constantly scanned by malicious actors on GitHub.",
         hint: "Create a fake local-only environment file.",
         mockOutput: "Wrote .env."
       },
       {
         title: "Write an Ignore Policy",
         explanation: ".gitignore tells Git which untracked paths to hide from normal status and add operations. Common entries include .env, logs, dependency folders, build output, and editor files.",
-        expectedCommand: "echo \".env\n*.log\ndist/\" > .gitignore",
+        expectedCommand: "printf '%s\\n' .env '*.log' dist/ > .gitignore",
+        commandFlags: [],
+        bestPractices: ["Set up a global .gitignore for OS files (.DS_Store) and a project .gitignore for code artifacts"],
+        realWorldContext: "Ignoring build directories keeps the repository small, ensuring fast CI pipeline clones.",
         hint: "Ignore .env, log files, and dist output.",
         mockOutput: "Wrote .gitignore with 3 rules."
       },
@@ -163,6 +208,9 @@ export const gitDeepDiveQuests: Quest[] = [
         title: "Audit Ignored Paths",
         explanation: "git status --ignored is useful when a file seems invisible. It confirms whether an ignore rule is working and helps debug broad patterns.",
         expectedCommand: "git status --ignored",
+        commandFlags: [{ flag: "--ignored", description: "Show ignored files in the status output" }],
+        bestPractices: ["Use this to verify your ignore patterns are working as expected without tracking the files"],
+        realWorldContext: "Auditing ignored files helps verify that sensitive logs aren't accidentally bypassing rules.",
         hint: "List both normal and ignored paths.",
         mockOutput: "Ignored files:\n  .env\n\nUntracked files:\n  .gitignore"
       },
@@ -170,6 +218,9 @@ export const gitDeepDiveQuests: Quest[] = [
         title: "Stage the Policy, Not the Secret",
         explanation: "The correct commit includes .gitignore but not .env. That distinction is exactly why staging is a separate step.",
         expectedCommand: "git add .gitignore",
+        commandFlags: [],
+        bestPractices: ["Commit ignore rules early before anyone has a chance to commit a secret"],
+        realWorldContext: "The ignore file is shared infrastructure; keeping it updated prevents the entire team from making mistakes.",
         hint: "Only stage the ignore policy.",
         mockOutput: "Staged .gitignore."
       },
@@ -177,6 +228,9 @@ export const gitDeepDiveQuests: Quest[] = [
         title: "Commit Repository Hygiene",
         explanation: "Security basics belong early in the Git course because secret leaks are one of the most expensive version-control mistakes.",
         expectedCommand: "git commit -m \"Add ignore rules\"",
+        commandFlags: [{ flag: "-m", description: "Inline commit message" }],
+        bestPractices: ["Document any unusual ignore rules in the commit message"],
+        realWorldContext: "A solid ignore policy is the first line of defense in DevSecOps.",
         hint: "Commit .gitignore.",
         mockOutput: "[main c18f0a9] Add ignore rules\n 1 file changed, 3 insertions(+)\n create mode 100644 .gitignore"
       }
@@ -205,12 +259,18 @@ export const gitDeepDiveQuests: Quest[] = [
     ],
     verificationCommand: "Checks if branch feature-devops exists in devops-sandbox.",
     validatorKey: "git_branch",
+    conceptSummary: "Branches in Git are lightweight pointers to commits. Creating a branch is nearly instantaneous because Git only creates a 41-byte file containing the commit SHA. This makes Git's branching model extremely powerful compared to older VCS systems that copied entire directory trees.\n\nThe typical workflow is: create a feature branch from main, make your changes there, then merge back. This isolates work-in-progress from the stable codebase. When a branch is merged with a fast-forward, Git simply moves the main pointer forward — no merge commit is needed.",
+    learningObjectives: ["Create feature branches with git checkout -b","Switch between branches safely","Merge branches using fast-forward strategy","Visualize branch history with git log --graph --all"],
+    realWorldScenario: "Your team follows the GitHub Flow branching strategy. You need to implement a new user authentication feature without disrupting the main branch. You create a feature branch, develop the feature, then merge it back with a clean fast-forward merge.",
     hint: "A branch is a movable name pointing at a commit.",
     interactiveSteps: [
       {
         title: "Create and Switch to a Feature Branch",
         explanation: "Branching lets you isolate work. In Git, a branch is lightweight because it is just a reference that moves as new commits are created.",
         expectedCommand: "git checkout -b feature-devops",
+        commandFlags: [{ flag: "-b", description: "Create the branch and switch to it in one step" }],
+        bestPractices: ["Use a naming convention like feat/..., fix/..., or bug/... for branches"],
+        realWorldContext: "Branching isolates risky infrastructure changes from the stable production deployment branch.",
         acceptedCommands: ["git switch -c feature-devops"],
         hint: "Create feature-devops and move HEAD there.",
         mockOutput: "Switched to a new branch 'feature-devops'"
@@ -219,6 +279,9 @@ export const gitDeepDiveQuests: Quest[] = [
         title: "Add Feature Work",
         explanation: "Files created on a branch are still normal working-tree files. They become part of the branch history only after staging and committing.",
         expectedCommand: "echo \"DevOps Quest Complete!\" > quest.txt",
+        commandFlags: [],
+        bestPractices: ["Keep feature branches focused on a single task or Jira ticket"],
+        realWorldContext: "Small, focused branches lead to faster code reviews and safer deployments.",
         hint: "Create quest.txt on the feature branch.",
         mockOutput: "Wrote quest.txt."
       },
@@ -226,6 +289,9 @@ export const gitDeepDiveQuests: Quest[] = [
         title: "Stage the Branch File",
         explanation: "Staging records the exact version of quest.txt that will become part of the next feature commit.",
         expectedCommand: "git add quest.txt",
+        commandFlags: [],
+        bestPractices: ["Ensure tests pass locally before staging the final changes"],
+        realWorldContext: "Pre-commit hooks will often run on these staged files to verify formatting and linting.",
         hint: "Stage quest.txt.",
         mockOutput: "Staged quest.txt."
       },
@@ -233,6 +299,9 @@ export const gitDeepDiveQuests: Quest[] = [
         title: "Commit on the Branch",
         explanation: "The branch pointer moves forward to the new commit. main still points to the earlier commit until you merge.",
         expectedCommand: "git commit -m \"Add quest file\"",
+        commandFlags: [{ flag: "-m", description: "Inline commit message" }],
+        bestPractices: ["Include the ticket number (e.g., JIRA-123) in the commit message to link to project tracking"],
+        realWorldContext: "Linking commits to change requests helps reviewers and auditors follow why a deployment changed.",
         hint: "Commit the feature work.",
         mockOutput: "[feature-devops 4ab3e1c] Add quest file\n 1 file changed, 1 insertion(+)\n create mode 100644 quest.txt"
       },
@@ -240,6 +309,9 @@ export const gitDeepDiveQuests: Quest[] = [
         title: "Return to Main",
         explanation: "Switching branches changes HEAD and updates the working tree to match the target branch when possible.",
         expectedCommand: "git checkout main",
+        commandFlags: [],
+        bestPractices: ["Always ensure your working directory is clean before switching branches to avoid conflicts"],
+        realWorldContext: "In production, the main branch is protected and triggers automated deployments when updated.",
         acceptedCommands: ["git switch main"],
         hint: "Move back to main before merging.",
         mockOutput: "Switched to branch 'main'"
@@ -248,6 +320,9 @@ export const gitDeepDiveQuests: Quest[] = [
         title: "Fast-Forward Merge",
         explanation: "If main has no new commits since the feature branch split, Git can fast-forward: it simply moves the main pointer to the feature commit.",
         expectedCommand: "git merge feature-devops",
+        commandFlags: [],
+        bestPractices: ["Prefer fast-forward merges for small local branches to keep history linear"],
+        realWorldContext: "Merge commits provide context in team environments, but fast-forwards are cleaner for simple updates.",
         hint: "Merge the feature branch into main.",
         mockOutput: "Updating aed1d1a..4ab3e1c\nFast-forward\n quest.txt | 1 +\n 1 file changed, 1 insertion(+)"
       },
@@ -255,6 +330,9 @@ export const gitDeepDiveQuests: Quest[] = [
         title: "Read the History Graph",
         explanation: "The graph view is essential in reviews and incident analysis. It shows branch structure, merge points, tags, and where HEAD is.",
         expectedCommand: "git log --oneline --graph --decorate --all",
+        commandFlags: [{ flag: "--graph", description: "Draw a text-based graphical representation of the commit history" }, { flag: "--all", description: "Show all branches, not just the current one" }],
+        bestPractices: ["Use aliases like 'git config --global alias.dog \"log --all --decorate --oneline --graph\"' for quick access"],
+        realWorldContext: "Visualizing the commit graph helps diagnose why a specific bug reappeared after a complex merge.",
         hint: "Show all branches as a compact graph.",
         mockOutput: "* 4ab3e1c (HEAD -> main, feature-devops) Add quest file\n* aed1d1a First commit"
       }
@@ -283,6 +361,9 @@ export const gitDeepDiveQuests: Quest[] = [
     ],
     verificationCommand: "Browser simulation validates conflict resolution.",
     validatorKey: "git_conflict",
+    conceptSummary: "Merge conflicts occur when two branches modify the same lines of the same file. Git cannot automatically determine which version is correct, so it marks the conflicting sections with conflict markers (<<<<<<, ======, >>>>>>) and asks you to resolve them manually.\n\nConflicts are a normal part of collaborative development, not errors. The key is understanding the three versions involved: the common ancestor (base), your version (ours), and the incoming version (theirs). Resolution means choosing the correct final state and removing the conflict markers.",
+    learningObjectives: ["Understand why merge conflicts occur","Read and interpret conflict markers","Resolve conflicts by choosing the correct final state","Complete a merge after conflict resolution","Verify the merge result in the commit log"],
+    realWorldScenario: "Two developers on your team have both modified the server configuration file — one changed the port to 8081 for testing, the other changed it to 8082 for staging. You need to merge both branches and resolve the conflict by setting the correct production port (8080).",
     hint: "Conflict markers show current branch, separator, and incoming branch.",
     interactiveSteps: [
       {
@@ -380,6 +461,9 @@ export const gitDeepDiveQuests: Quest[] = [
     ],
     verificationCommand: "Browser simulation validates remote workflow concepts.",
     validatorKey: "git_remote",
+    conceptSummary: "Remote repositories are copies of your project hosted on a server (GitHub, GitLab, Bitbucket). The `git remote` command manages these bookmarks. `origin` is the conventional name for your primary remote.\n\nThe push/pull workflow synchronizes your local repository with the remote. `git fetch` downloads new commits without modifying your working tree. `git pull` fetches and merges (or rebases). `git push` uploads your local commits. The `-u` flag sets upstream tracking so future push/pull commands know which remote branch to target.",
+    learningObjectives: ["Add and inspect remote repository connections","Understand the difference between fetch, pull, and push","Set upstream tracking with the -u flag","Use pull --rebase for clean linear history"],
+    realWorldScenario: "You have been developing a tool locally and now need to share it with your team by pushing it to the company's GitHub organization. You add the remote, push your work, and set up tracking so daily pulls keep everyone synchronized.",
     hint: "fetch updates remote-tracking refs; pull is fetch plus integration.",
     interactiveSteps: [
       {
@@ -440,6 +524,9 @@ export const gitDeepDiveQuests: Quest[] = [
     ],
     verificationCommand: "Browser simulation validates undo command choice.",
     validatorKey: "git_undo",
+    conceptSummary: "Git provides multiple undo mechanisms, each suited to different situations. `git restore` discards unstaged changes (destructive — changes are lost). `git restore --staged` unstages files without losing changes. `git revert` creates a new commit that undoes a previous commit (safe for shared branches).\n\n`git reset` moves the branch pointer backward. `--soft` keeps changes staged, `--mixed` (default) unstages them, and `--hard` discards everything. The golden rule: use `revert` on public branches (preserves history), use `reset` only on local/private branches.",
+    learningObjectives: ["Discard unstaged changes safely with git restore","Understand the difference between restore, revert, and reset","Create a revert commit to undo published changes","Apply the golden rule of undoing: revert public, reset private"],
+    realWorldScenario: "A deployment broke production because of a bad commit pushed 2 hours ago. You need to quickly revert the problematic commit without losing the 5 good commits that came after it. Using git revert, you create a clean undo commit that can be safely pushed.",
     hint: "restore changes files; reset moves refs/index; revert creates a new commit.",
     interactiveSteps: [
       {
@@ -514,6 +601,9 @@ export const gitDeepDiveQuests: Quest[] = [
     ],
     verificationCommand: "Browser simulation validates stash and clean workflow.",
     validatorKey: "git_stash",
+    conceptSummary: "Git stash temporarily shelves your uncommitted changes so you can switch context without committing half-done work. The stash is a stack — you can push multiple stashes and pop them later.\n\n`git stash push -m 'description'` saves your work with a label. `git stash list` shows all stashed entries. `git stash apply` reapplies without removing from the stack. `git stash pop` applies and removes. `git clean` removes untracked files — use with caution as this is irreversible.",
+    learningObjectives: ["Stash work-in-progress with descriptive messages","Manage the stash stack (list, apply, pop, drop)","Clean untracked files from the working directory","Switch context safely without losing work"],
+    realWorldScenario: "You are halfway through implementing a feature when an urgent hotfix request comes in. You cannot commit your half-done feature code, so you stash it, switch to the hotfix branch, apply the fix, then return to your feature branch and restore your stashed work.",
     hint: "Use stash for temporary tracked work; use clean carefully for untracked files.",
     interactiveSteps: [
       {
@@ -582,6 +672,9 @@ export const gitDeepDiveQuests: Quest[] = [
     ],
     verificationCommand: "Browser simulation validates advanced history commands.",
     validatorKey: "git_rebase",
+    conceptSummary: "Rebase replays your branch's commits on top of another branch's latest commit, creating a clean linear history. Unlike merge (which creates a merge commit), rebase rewrites commit SHAs — the commits are new objects with different parents.\n\nCherry-pick copies a single specific commit from one branch to another. This is useful when you need just one fix from a feature branch without merging everything. Warning: never rebase commits that have been pushed to a shared remote — this rewrites history that others may have based their work on.",
+    learningObjectives: ["Rebase a feature branch onto an updated main branch","Understand how rebase rewrites commit history","Cherry-pick individual commits across branches","Know when to rebase vs merge (private vs shared branches)"],
+    realWorldScenario: "Your feature branch has fallen behind main by 15 commits. Your team requires a clean linear history for code review. You rebase your feature branch onto main, resolving any conflicts along the way, then cherry-pick a critical security fix from another team's branch.",
     hint: "Rebase rewrites local commit IDs; cherry-pick copies a commit's patch.",
     interactiveSteps: [
       {
@@ -685,6 +778,9 @@ export const gitDeepDiveQuests: Quest[] = [
     ],
     verificationCommand: "Verifies if recovery-branch exists in devops-sandbox.",
     validatorKey: "git_reflog",
+    conceptSummary: "The reflog (reference log) is Git's safety net. It records every movement of HEAD — commits, checkouts, rebases, resets, merges. Even after a destructive `git reset --hard`, the 'lost' commits still exist in the object database and can be found via reflog.\n\nReflog entries expire after 90 days by default (30 days for unreachable commits). This makes reflog your emergency recovery tool: find the SHA of the lost state, then create a branch pointing to it. As long as you haven't run `git gc` and the reflog hasn't expired, you can recover almost anything.",
+    learningObjectives: ["Understand reflog as Git's safety net for HEAD movements","Recover 'lost' commits after a destructive reset","Create recovery branches from reflog entries","Know the reflog expiry policy (90 days reachable, 30 days unreachable)"],
+    realWorldScenario: "A team member accidentally ran `git reset --hard HEAD~3` on a shared branch, seemingly destroying three days of work. Using the reflog, you find the SHA of the commit before the reset and create a recovery branch, saving the lost work.",
     hint: "Reflog records where refs and HEAD have been locally.",
     interactiveSteps: [
       {
@@ -752,6 +848,9 @@ export const gitDeepDiveQuests: Quest[] = [
     ],
     verificationCommand: "Browser simulation validates release engineering Git commands.",
     validatorKey: "git_release",
+    conceptSummary: "Tags mark specific commits as release points. Annotated tags (`git tag -a v1.0.0 -m 'message'`) store tagger info, date, and message — use these for releases. Lightweight tags are just pointers — use for temporary markers.\n\nPre-commit hooks run scripts before each commit, enforcing code quality (linting, tests). Submodules embed external repositories inside your project. Worktrees let you check out multiple branches simultaneously in separate directories — useful for reviewing PRs while continuing your work.",
+    learningObjectives: ["Create annotated release tags following semver conventions","Set up pre-commit hooks for automated code quality checks","Add Git submodules for external dependencies","Use worktrees to work on multiple branches simultaneously"],
+    realWorldScenario: "Your team is preparing the v1.0.0 release. You need to tag the release commit, set up a pre-commit hook to run linters before every commit, add a shared utility library as a submodule, and create a worktree to start v1.1.0 development while the release branch is being finalized.",
     hint: "Tags mark releases; hooks automate local checks; worktrees give one repo multiple working directories.",
     interactiveSteps: [
       {
