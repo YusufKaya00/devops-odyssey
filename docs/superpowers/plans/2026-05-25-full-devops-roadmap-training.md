@@ -1,5 +1,7 @@
 # Full DevOps Roadmap Training Implementation Plan
 
+> Current implementation checkpoint: [2026-09-15 status](../../IMPLEMENTATION_STATUS.md). Content presence and stateful execution are tracked separately; this plan is not fully complete.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Turn the current roadmap app into a serious simulation-based DevOps academy covering all 12 roadmap modules from beginner foundations to senior/operator-level practice.

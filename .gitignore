@@ -29,3 +29,5 @@ userdata.json
 userdata_*.json
 devops-sandbox/
 devops-roadmap-source/
+test-results/
+playwright-report/

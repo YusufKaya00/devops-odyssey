@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { lazy, Suspense, useState, useEffect, useRef } from 'react';
 import type { InteractiveStep } from '../data/roadmapData';
+import { hasStatefulGitLab } from '../simulation/gitGoals';
+import { commandsMatch } from '../simulation/commands';
 
-interface TerminalSimulatorProps {
+export interface TerminalSimulatorProps {
   questId: string;
   validatorKey: string;
   interactiveSteps: InteractiveStep[];
@@ -91,7 +93,15 @@ const createInitialState = (validatorKey: string): SimState => {
   };
 };
 
-export const TerminalSimulator: React.FC<TerminalSimulatorProps> = ({
+const StatefulGitTerminal = lazy(() => import('./StatefulGitTerminal'));
+
+export const TerminalSimulator: React.FC<TerminalSimulatorProps> = (props) => (
+  hasStatefulGitLab(props.validatorKey)
+    ? <Suspense fallback={<div role="status">Opening repository...</div>}><StatefulGitTerminal key={props.validatorKey} {...props} /></Suspense>
+    : <GuidedTerminalSimulator key={props.validatorKey} {...props} />
+);
+
+const GuidedTerminalSimulator: React.FC<TerminalSimulatorProps> = ({
   questId,
   validatorKey,
   interactiveSteps,
@@ -99,9 +109,7 @@ export const TerminalSimulator: React.FC<TerminalSimulatorProps> = ({
   onStepComplete,
   isReviewMode = false,
   activeStepIndexOverride,
-  onStepChange,
-  stepNotes,
-  onSaveNotes
+  onStepChange
 }) => {
   const [history, setHistory] = useState<string[]>([]);
   const [inputVal, setInputVal] = useState<string>('');
@@ -114,7 +122,7 @@ export const TerminalSimulator: React.FC<TerminalSimulatorProps> = ({
   const [simState, setSimState] = useState<SimState>(() => createInitialState(validatorKey));
 
   const logsEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // Determine current active sub-step index based on completedSteps array
   const getActiveStepIdx = () => {
@@ -127,10 +135,9 @@ export const TerminalSimulator: React.FC<TerminalSimulatorProps> = ({
     return interactiveSteps.length; // All completed
   };
 
-  const activeStepIdx = isReviewMode && activeStepIndexOverride !== undefined
+  const activeStepIdx = activeStepIndexOverride !== undefined
     ? activeStepIndexOverride
     : getActiveStepIdx();
-  const allStepsCompleted = !isReviewMode && (activeStepIdx >= interactiveSteps.length);
 
   // Focus terminal input on click
   const handleTerminalClick = () => {
@@ -150,17 +157,12 @@ export const TerminalSimulator: React.FC<TerminalSimulatorProps> = ({
 
   // Check if typed command matches expected command
   const checkCommandTrigger = (typed: string) => {
-    if (allStepsCompleted) return false;
-    
     const target = interactiveSteps[activeStepIdx];
     if (!target) return false;
     
-    // Clean string helper (remove quotes, trim whitespace, ignore case)
-    const clean = (s: string) => s.toLowerCase().trim().replace(/['"`]/g, '').replace(/\s+/g, ' ');
-    
     const acceptedCommands = [target.expectedCommand, ...(target.acceptedCommands || [])];
 
-    if (acceptedCommands.some(command => clean(typed) === clean(command))) {
+    if (acceptedCommands.some(command => commandsMatch(typed, command))) {
       // Execute side-effect updates to local simState based on the command
       applyStateSideEffects(typed);
       
@@ -169,13 +171,10 @@ export const TerminalSimulator: React.FC<TerminalSimulatorProps> = ({
       printSuccess(`✓ Correct: completed Step "${target.title}"!`);
       
       // Callback to save progress or change step in review mode
-      if (isReviewMode) {
-        if (onStepChange && activeStepIdx < interactiveSteps.length - 1) {
-          onStepChange(activeStepIdx + 1);
-        }
-      } else {
+      if (!isReviewMode && !completedSteps.includes(`${validatorKey}:${activeStepIdx}`)) {
         onStepComplete(activeStepIdx);
       }
+      if (onStepChange && activeStepIdx < interactiveSteps.length - 1) onStepChange(activeStepIdx + 1);
       return true;
     }
     return false;
@@ -664,7 +663,7 @@ export const TerminalSimulator: React.FC<TerminalSimulatorProps> = ({
         printOut(`* ${simState.git.currentBranch}`);
         return;
       }
-      printOut(`git command "${sub}" completed.`);
+      printErr(`git ${sub}: this command is not implemented in the guided sandbox.`);
       return;
     }
 
@@ -867,8 +866,9 @@ export const TerminalSimulator: React.FC<TerminalSimulatorProps> = ({
     printErr(`command not found or incorrect for this step: ${cmd}. Expected: "${interactiveSteps[activeStepIdx]?.expectedCommand || ''}"`);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
       handleCommand(inputVal);
       setInputVal('');
     } else if (e.key === 'ArrowUp') {
@@ -901,7 +901,7 @@ export const TerminalSimulator: React.FC<TerminalSimulatorProps> = ({
           <span className="term-btn term-minimize"></span>
           <span className="term-btn term-expand"></span>
         </div>
-        <div className="terminal-title">DevOps Simulated Shell: /{simState.currentDir} ({simState.git.initialized ? simState.git.currentBranch : 'no-git'})</div>
+        <div className="terminal-title">Guided scenario: /{simState.currentDir}</div>
         <div style={{ width: '40px' }} />
       </div>
 
@@ -914,12 +914,12 @@ export const TerminalSimulator: React.FC<TerminalSimulatorProps> = ({
         ))}
         <div ref={logsEndRef} />
         
-        {!allStepsCompleted && (
           <div className="terminal-input-line">
             <span className="term-prompt">➜  /{simState.currentDir} git:({simState.git.initialized ? simState.git.currentBranch : 'no-git'}) $ </span>
-            <input
+            <textarea
               ref={inputRef}
-              type="text"
+              aria-label="Terminal command"
+              rows={2}
               className="terminal-input"
               value={inputVal}
               onChange={(e) => setInputVal(e.target.value)}
@@ -931,7 +931,6 @@ export const TerminalSimulator: React.FC<TerminalSimulatorProps> = ({
               autoFocus
             />
           </div>
-        )}
       </div>
     </div>
   );

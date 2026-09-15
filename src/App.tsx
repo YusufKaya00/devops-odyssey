@@ -9,6 +9,8 @@ import type { ModuleData, Quest } from './data/roadmapData';
 import { TerminalSimulator } from './components/TerminalSimulator';
 import { calculateLevel } from './progress';
 import type { LevelInfo } from './progress';
+import { completeLessonStep, getLessonNavigation, mergeLessonProgress } from './lessonNavigation';
+import { hasStatefulGitLab } from './simulation/gitGoals';
 
 interface GoogleCredentialResponse {
   credential: string;
@@ -192,8 +194,16 @@ function App() {
     }
     return defaultUserData;
   });
+  const userDataRef = useRef(userData);
+  const updateUserData = (update: UserData | ((current: UserData) => UserData)) => {
+    const next = typeof update === 'function' ? update(userDataRef.current) : update;
+    userDataRef.current = next;
+    setUserData(next);
+    localStorage.setItem('devops_odyssey_progress', JSON.stringify(next));
+    return next;
+  };
   const [activeQuest, setActiveQuest] = useState<Quest | null>(null);
-  const [reviewedStepIdx, setReviewedStepIdx] = useState<number | null>(null);
+  const [selectedStepIdx, setSelectedStepIdx] = useState<number | null>(null);
   const [verifying, setVerifying] = useState<boolean>(false);
   const [verifyResult, setVerifyResult] = useState<{ success: boolean; message: string } | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
@@ -229,11 +239,19 @@ function App() {
 
   // Step Notes panel state
   const [showNotes, setShowNotes] = useState<boolean>(() => localStorage.getItem('personal_notes_visible') !== 'false');
-  const [notesText, setNotesText] = useState<string>('');
-  const [savingStatus, setSavingStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [noteSaveStatuses, setNoteSaveStatuses] = useState<Record<string, 'saving' | 'saved'>>({});
   const [notesHeight, setNotesHeight] = useState<string>(() => localStorage.getItem('personal_notes_height') || '100px');
   const [isMaximized, setIsMaximized] = useState<boolean>(false);
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const noteSaveTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  const noteSaveRequests = useRef(new Map<string, Promise<void>>());
+  const questVerificationInFlight = useRef(new Set<string>());
+  const lessonPanelRef = useRef<HTMLDivElement>(null);
+  const lessonNavigation = getLessonNavigation(
+    activeQuest?.validatorKey || '', activeQuest?.interactiveSteps?.length || 0, userData, selectedStepIdx,
+  );
+  const activeNoteKey = activeQuest ? lessonNavigation.noteKey : null;
+  const notesText = activeNoteKey ? userData.stepNotes?.[activeNoteKey] || '' : '';
+  const savingStatus = activeNoteKey ? noteSaveStatuses[activeNoteKey] || 'idle' : 'idle';
 
   // Dynamic headers helper
   const getHeaders = (currentAuth?: AuthUser) => {
@@ -317,8 +335,10 @@ function App() {
           // ignore parse errors
         }
       }
-      setUserData(mergedData);
-      localStorage.setItem('devops_odyssey_progress', JSON.stringify(mergedData));
+      updateUserData(current => {
+        const merged = mergeLessonProgress(current, mergedData);
+        return { ...merged, levelInfo: calculateLevel(merged.experiencePoints) };
+      });
       
       // Auto-detect OS of backend
       if (data.hostOS) {
@@ -391,8 +411,7 @@ function App() {
       });
       const result = await res.json();
       if (result.success) {
-        setUserData(result.data);
-        localStorage.setItem('devops_odyssey_progress', JSON.stringify(result.data));
+        updateUserData(result.data);
         setShowMergeBanner(false);
         localStorage.removeItem('devops_odyssey_progress_guest');
         alert('Progress successfully merged from guest account!');
@@ -725,6 +744,11 @@ function App() {
 
   // Verify Action
   const handleVerify = async (quest: Quest, options?: { isSimulated?: boolean }) => {
+    if (questVerificationInFlight.current.has(quest.validatorKey)) return;
+    if (options?.isSimulated && !getLessonNavigation(
+      quest.validatorKey, quest.interactiveSteps?.length || 0, userDataRef.current,
+    ).allStepsComplete) return;
+    questVerificationInFlight.current.add(quest.validatorKey);
     setVerifying(true);
     setVerifyResult(null);
     try {
@@ -743,36 +767,30 @@ function App() {
         message: result.message
       });
       if (result.success && result.data) {
-        const mergedNotes = {
-          ...(result.data.stepNotes || {}),
-          ...(userData?.stepNotes || {})
-        };
-        const updatedWithNotes = {
-          ...result.data,
-          stepNotes: mergedNotes
-        };
-        setUserData(updatedWithNotes);
-        localStorage.setItem('devops_odyssey_progress', JSON.stringify(updatedWithNotes));
+        updateUserData(current => {
+          const merged = mergeLessonProgress(current, result.data);
+          return { ...merged, levelInfo: calculateLevel(merged.experiencePoints) };
+        });
       }
     } catch {
       // Offline fallback: simulated verification automatically succeeds in local mode
       if (options?.isSimulated) {
-        const updatedQuests = [...(userData.completedQuests || [])];
+        const current = userDataRef.current;
+        const updatedQuests = [...(current.completedQuests || [])];
         const isNewQuest = !updatedQuests.includes(quest.validatorKey);
         if (isNewQuest) {
           updatedQuests.push(quest.validatorKey);
         }
         const xpReward = quest.difficulty === 'Beginner' ? 100 : quest.difficulty === 'Intermediate' ? 200 : 300;
-        const newXp = (userData.experiencePoints || 0) + (isNewQuest ? xpReward : 0);
+        const newXp = (current.experiencePoints || 0) + (isNewQuest ? xpReward : 0);
         
         const updatedUser = {
-          ...userData,
+          ...current,
           completedQuests: updatedQuests,
           experiencePoints: newXp,
           levelInfo: calculateLevel(newXp)
         };
-        setUserData(updatedUser);
-        localStorage.setItem('devops_odyssey_progress', JSON.stringify(updatedUser));
+        updateUserData(updatedUser);
         setVerifyResult({
           success: true,
           message: 'Quest completed successfully inside the simulator!'
@@ -784,6 +802,7 @@ function App() {
         });
       }
     } finally {
+      questVerificationInFlight.current.delete(quest.validatorKey);
       setVerifying(false);
     }
   };
@@ -801,9 +820,9 @@ function App() {
       levelInfo: calculateLevel(0),
       stepNotes: {}
     };
-    setUserData(freshUser);
+    updateUserData(freshUser);
     setActiveQuest(null);
-    setReviewedStepIdx(null);
+    setSelectedStepIdx(null);
     setVerifyResult(null);
     try {
       const res = await fetch('http://localhost:5001/api/reset', {
@@ -812,112 +831,48 @@ function App() {
       });
       const result = await res.json();
       if (result.success) {
-        setUserData(result.data);
-        localStorage.setItem('devops_odyssey_progress', JSON.stringify(result.data));
+        updateUserData(result.data);
       }
     } catch {
       console.warn('Backend reset offline.');
     }
   };
 
-  const handleSaveNotes = async (questKey: string, stepIndex: number, notesText: string) => {
-    if (!userData) return;
-    
-    const updatedNotes = {
-      ...(userData.stepNotes || {}),
-      [`${questKey}:${stepIndex}`]: notesText
-    };
-
-    const updatedUser = {
-      ...userData,
-      stepNotes: updatedNotes
-    };
-
-    setUserData(updatedUser);
-    localStorage.setItem('devops_odyssey_progress', JSON.stringify(updatedUser));
-
-    try {
-      await fetch('http://localhost:5001/api/notes', {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify({
-          validatorKey: questKey,
-          stepIndex,
-          notes: notesText
-        })
-      });
-    } catch (e) {
-      console.error('Failed to save note to backend:', e);
-    }
-  };
-
-  // Sync notes text whenever quest, step, or user progress changes
-  useEffect(() => {
-    if (!activeQuest || !userData) {
-      setNotesText('');
-      return;
-    }
-    
-    const steps = activeQuest.interactiveSteps || [];
-    const isQuestAlreadyCompleted = userData.completedQuests.includes(activeQuest.validatorKey);
-    let stepIdx = 0;
-    if (isQuestAlreadyCompleted) {
-      stepIdx = Math.min(reviewedStepIdx ?? 0, steps.length > 0 ? steps.length - 1 : 0);
-    } else {
-      for (let i = 0; i < steps.length; i++) {
-        if (!userData.completedSteps?.includes(`${activeQuest.validatorKey}:${i}`)) {
-          stepIdx = i;
-          break;
-        }
-        stepIdx = i + 1;
-      }
-    }
-    
-    const currentNote = userData.stepNotes?.[`${activeQuest.validatorKey}:${stepIdx}`] || '';
-    setNotesText(currentNote);
-    setSavingStatus('idle');
-  }, [activeQuest, reviewedStepIdx, userData?.completedSteps, userData?.stepNotes]);
-
-  // Auto-save step notes with debouncing
+  // Persist drafts immediately; debounce and serialize backend writes per step.
   const handleNotesChange = (val: string) => {
-    if (!activeQuest || !userData) return;
-    setNotesText(val);
-    setSavingStatus('saving');
-
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-
-    // Calculate current step index
-    const steps = activeQuest.interactiveSteps || [];
-    const isQuestAlreadyCompleted = userData.completedQuests.includes(activeQuest.validatorKey);
-    let stepIdx = 0;
-    if (isQuestAlreadyCompleted) {
-      stepIdx = Math.min(reviewedStepIdx ?? 0, steps.length > 0 ? steps.length - 1 : 0);
-    } else {
-      for (let i = 0; i < steps.length; i++) {
-        if (!userData.completedSteps?.includes(`${activeQuest.validatorKey}:${i}`)) {
-          stepIdx = i;
-          break;
+    if (!activeQuest || !activeNoteKey || lessonNavigation.activeStepIndex === null) return;
+    const noteKey = activeNoteKey;
+    const stepIndex = lessonNavigation.activeStepIndex;
+    const validatorKey = activeQuest.validatorKey;
+    const headers = getHeaders();
+    updateUserData(current => ({ ...current, stepNotes: { ...current.stepNotes, [noteKey]: val } }));
+    setNoteSaveStatuses(current => ({ ...current, [noteKey]: 'saving' }));
+    clearTimeout(noteSaveTimers.current.get(noteKey));
+    noteSaveTimers.current.set(noteKey, setTimeout(() => {
+      noteSaveTimers.current.delete(noteKey);
+      const pending = noteSaveRequests.current.get(noteKey) || Promise.resolve();
+      const request = pending.then(async () => {
+        try {
+          const response = await fetch('http://localhost:5001/api/notes', {
+            method: 'POST', headers,
+            body: JSON.stringify({ validatorKey, stepIndex, notes: val }),
+          });
+          if (!response.ok) throw new Error(`Note sync failed (HTTP ${response.status})`);
+        } catch (error) {
+          console.error('Note saved locally; backend sync failed:', error);
         }
-        stepIdx = i + 1;
-      }
-    }
-
-    saveTimeoutRef.current = setTimeout(async () => {
-      await handleSaveNotes(activeQuest.validatorKey, stepIdx, val);
-      setSavingStatus('saved');
-      setTimeout(() => setSavingStatus('idle'), 1500);
-    }, 800);
+        if (!noteSaveTimers.current.has(noteKey) && noteSaveRequests.current.get(noteKey) === request) {
+          setNoteSaveStatuses(current => ({ ...current, [noteKey]: 'saved' }));
+          noteSaveRequests.current.delete(noteKey);
+        }
+      });
+      noteSaveRequests.current.set(noteKey, request);
+    }, 800));
   };
 
-  // Clean up save timeout on unmount
   useEffect(() => {
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-    };
+    const timers = noteSaveTimers.current;
+    return () => timers.forEach(timer => clearTimeout(timer));
   }, []);
 
   // Module Status
@@ -938,7 +893,7 @@ function App() {
   const handleModuleClick = (modId: number) => {
     setActiveTab(modId);
     setActiveQuest(null);
-    setReviewedStepIdx(null);
+    setSelectedStepIdx(null);
     setVerifyResult(null);
   };
 
@@ -995,49 +950,43 @@ function App() {
     return Math.round((completed / total) * 100);
   };
 
+  const openQuest = (quest: Quest) => {
+    setActiveQuest(quest);
+    setSelectedStepIdx(getLessonNavigation(
+      quest.validatorKey, quest.interactiveSteps?.length || 0, userData,
+    ).activeStepIndex);
+    setVerifyResult(null);
+    setIsMaximized(false);
+  };
 
+  const exitQuest = () => {
+    setActiveQuest(null);
+    setSelectedStepIdx(null);
+    setVerifyResult(null);
+    setIsMaximized(false);
+  };
+
+  const verifyActiveQuest = () => {
+    if (activeQuest) void handleVerify(activeQuest);
+  };
 
   // If we are inside Focused Learning Lab mode
   if (activeQuest && userData) {
     const steps = activeQuest.interactiveSteps || [];
-    
+    const questModule = roadmapModules.find(module => module.quests.some(quest => quest.validatorKey === activeQuest.validatorKey));
     const isQuestAlreadyCompleted = userData.completedQuests.includes(activeQuest.validatorKey);
-
-    // Find current active step index
-    let activeStepIdx = 0;
-    if (isQuestAlreadyCompleted) {
-      if (reviewedStepIdx === null) {
-        setReviewedStepIdx(0);
-      }
-      activeStepIdx = Math.min(reviewedStepIdx ?? 0, steps.length > 0 ? steps.length - 1 : 0);
-    } else {
-      for (let i = 0; i < steps.length; i++) {
-        if (!userData.completedSteps?.includes(`${activeQuest.validatorKey}:${i}`)) {
-          activeStepIdx = i;
-          break;
-        }
-        activeStepIdx = i + 1;
-      }
-    }
-    
-    const allStepsDone = !isQuestAlreadyCompleted && (activeStepIdx >= steps.length);
+    const isStatefulGitLab = hasStatefulGitLab(activeQuest.validatorKey);
+    const activeStepIdx = lessonNavigation.activeStepIndex ?? 0;
+    const selectStep = (index: number) => {
+      setSelectedStepIdx(getLessonNavigation(activeQuest.validatorKey, steps.length, userData, index).activeStepIndex);
+      lessonPanelRef.current?.scrollTo({ top: 0 });
+    };
 
     const handleStepComplete = async (stepIdx: number) => {
-      const stepKey = `${activeQuest.validatorKey}:${stepIdx}`;
-      const currentSteps = userData.completedSteps || [];
-      const updatedSteps = currentSteps.includes(stepKey) ? currentSteps : [...currentSteps, stepKey];
-      
-      const newXp = (userData.experiencePoints || 0) + (currentSteps.includes(stepKey) ? 0 : 20);
-
-      const updatedUser = {
-        ...userData,
-        completedSteps: updatedSteps,
-        experiencePoints: newXp,
-        levelInfo: calculateLevel(newXp)
-      };
-
-      setUserData(updatedUser);
-      localStorage.setItem('devops_odyssey_progress', JSON.stringify(updatedUser));
+      const current = userDataRef.current;
+      const updatedUser = completeLessonStep(current, activeQuest.validatorKey, steps.length, stepIdx);
+      if (updatedUser === current) return;
+      updateUserData({ ...updatedUser, levelInfo: calculateLevel(updatedUser.experiencePoints) });
 
       // Call backend to save step completion progress
       try {
@@ -1052,23 +1001,19 @@ function App() {
         });
         const result = await res.json();
         if (result.success && result.data) {
-          const mergedNotes = {
-            ...(result.data.stepNotes || {}),
-            ...(userData?.stepNotes || {})
-          };
-          const updatedWithNotes = {
-            ...result.data,
-            stepNotes: mergedNotes
-          };
-          setUserData(updatedWithNotes);
-          localStorage.setItem('devops_odyssey_progress', JSON.stringify(updatedWithNotes));
+          updateUserData(latest => {
+            const merged = mergeLessonProgress(latest, result.data);
+            return { ...merged, levelInfo: calculateLevel(merged.experiencePoints) };
+          });
         }
       } catch (e) {
         console.error('Failed to sync sub-step progress', e);
       }
 
-      // If this was the last sub-step, trigger full quest completion automatically!
-      if (stepIdx === steps.length - 1) {
+      // Completion is based on every actual step, never on the selected position.
+      if (!userDataRef.current.completedQuests.includes(activeQuest.validatorKey) && getLessonNavigation(
+        activeQuest.validatorKey, steps.length, userDataRef.current,
+      ).allStepsComplete) {
         await handleVerify(activeQuest, { isSimulated: true });
       }
     };
@@ -1077,17 +1022,27 @@ function App() {
       <div className="focused-lab-layout">
         {/* Header */}
         <header className="focused-lab-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <button className="btn btn-secondary" onClick={() => { setActiveQuest(null); setReviewedStepIdx(null); }} style={{ padding: '8px 16px' }}>
-              Exit Lab
+          <div className="focused-lab-heading">
+            <button type="button" className="btn btn-secondary quest-exit-button" onClick={exitQuest}>
+              <Icons.Grid /> Exit Quest
             </button>
-            <div>
-              <h2 style={{ fontSize: '18px', fontWeight: 800 }}>{activeQuest.title}</h2>
+            <div className="focused-lab-title">
+              <h2>{activeQuest.title}</h2>
               <span className={`quest-diff-badge diff-${activeQuest.difficulty}`} style={{ fontSize: '10px' }}>
                 {activeQuest.difficulty} Lab
               </span>
             </div>
           </div>
+          {questModule && (
+            <select className="quest-selector" aria-label="Quest" value={activeQuest.validatorKey} onChange={event => {
+              const quest = questModule.quests.find(item => item.validatorKey === event.target.value);
+              if (quest) openQuest(quest);
+            }}>
+              {questModule.quests.map(quest => (
+                <option key={quest.validatorKey} value={quest.validatorKey}>{quest.title}</option>
+              ))}
+            </select>
+          )}
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
             <div className="profile-pill" style={{ padding: '6px 12px' }}>
@@ -1108,15 +1063,75 @@ function App() {
         {/* Lab Split View */}
         <div className="focused-lab-body">
           {/* LEFT PANEL: INSTRUCTIONS & DevOps Theory */}
-          <div className="focused-lab-left-panel">
-            {!allStepsDone ? (
+          <div className="focused-lab-left-panel" ref={lessonPanelRef}>
+            {steps.length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                <nav className="lesson-step-navigation" aria-label="Lesson step navigation">
+                  <button type="button" className="btn btn-secondary step-nav-button" aria-label="Previous step" title="Previous step"
+                    disabled={!lessonNavigation.canGoPrevious} onClick={() => selectStep(activeStepIdx - 1)}>
+                    <span aria-hidden="true">←</span>
+                  </button>
+                  <select aria-label="Lesson step" value={activeStepIdx} onChange={event => selectStep(Number(event.target.value))}>
+                    {steps.map((step, index) => (
+                      <option key={index} value={index}>
+                        {index + 1}. {step.title}{lessonNavigation.stepCompleted[index] ? ' (completed)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <button type="button" className="btn btn-secondary step-nav-button" aria-label="Next step" title="Next step"
+                    disabled={!lessonNavigation.canGoNext} onClick={() => selectStep(activeStepIdx + 1)}>
+                    <span aria-hidden="true">→</span>
+                  </button>
+                  <span className="lesson-progress-summary" role="status">
+                    {lessonNavigation.completedCount}/{steps.length} completed
+                  </span>
+                </nav>
+                {lessonNavigation.allStepsComplete && (
+                  <div className="lesson-completion-status" role="status">
+                    <Icons.Check />
+                    <span>{isQuestAlreadyCompleted ? 'Quest completed' : 'All steps completed'}</span>
+                    {!isQuestAlreadyCompleted && (
+                      <button type="button" className="btn btn-secondary" disabled={verifying}
+                        onClick={() => void handleVerify(activeQuest, { isSimulated: true })}>
+                        {verifying ? 'Verifying...' : 'Verify Quest'}
+                      </button>
+                    )}
+                  </div>
+                )}
+                {verifyResult && !verifyResult.success && (
+                  <div className="verify-result error" role="alert">{verifyResult.message}</div>
+                )}
                 <div>
                   <span className="step-count-badge">Step {activeStepIdx + 1} of {steps.length}</span>
                   <h3 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', marginTop: '8px' }}>
                     {steps[activeStepIdx]?.title}
                   </h3>
                 </div>
+
+                {activeStepIdx === 0 && (activeQuest.conceptSummary || (activeQuest.learningObjectives && activeQuest.learningObjectives.length > 0) || activeQuest.realWorldScenario) && (
+                  <div className="concept-summary-panel">
+                    {activeQuest.conceptSummary && (
+                      <>
+                        <h4>Overview</h4>
+                        <p>{activeQuest.conceptSummary}</p>
+                      </>
+                    )}
+                    {activeQuest.learningObjectives && activeQuest.learningObjectives.length > 0 && (
+                      <ul className="learning-objectives-list">
+                        {activeQuest.learningObjectives.map((obj, idx) => (
+                          <li key={idx}>{obj}</li>
+                        ))}
+                      </ul>
+                    )}
+                    {activeQuest.realWorldScenario && (
+                      <div className="real-world-scenario">
+                        <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>
+                          {activeQuest.realWorldScenario}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="theory-block">
                   <h4 style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--primary-light)', marginBottom: '8px' }}>
@@ -1125,16 +1140,77 @@ function App() {
                   <p style={{ fontSize: '14px', lineHeight: 1.6, color: 'var(--text-secondary)' }}>
                     {steps[activeStepIdx]?.explanation}
                   </p>
+
+                  {(steps[activeStepIdx]?.commandFlags?.length ?? 0) > 0 && (
+                    <table className="command-flags-table">
+                      <thead>
+                        <tr>
+                          <th>Flag</th>
+                          <th>Description</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {steps[activeStepIdx].commandFlags!.map((flag, idx) => (
+                          <tr key={idx}>
+                            <td><code>{flag.flag}</code></td>
+                            <td>{flag.description}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+
+                  {(steps[activeStepIdx]?.bestPractices?.length ?? 0) > 0 && (
+                    <div className="best-practices-card">
+                      <h5 style={{ fontSize: '12px', color: 'var(--success)', marginBottom: '8px', textTransform: 'uppercase' }}>Best Practices</h5>
+                      <ul>
+                        {steps[activeStepIdx].bestPractices!.map((bp, idx) => (
+                          <li key={idx}>{bp}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {(steps[activeStepIdx]?.warnings?.length ?? 0) > 0 && (
+                    <div className="warning-card">
+                      <h5 style={{ fontSize: '12px', color: 'var(--warning)', marginBottom: '8px', textTransform: 'uppercase' }}>Warnings</h5>
+                      <ul>
+                        {steps[activeStepIdx].warnings!.map((w, idx) => (
+                          <li key={idx}>{w}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {steps[activeStepIdx]?.realWorldContext && (
+                    <div className="real-world-context">
+                      {steps[activeStepIdx].realWorldContext}
+                    </div>
+                  )}
                 </div>
 
                 <div className="objective-block">
                   <h4 style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--secondary)', marginBottom: '6px' }}>
                     🎯 Objective
                   </h4>
-                  <p style={{ fontSize: '14px', fontWeight: 600 }}>
-                    Type the following command in the terminal prompt:
-                  </p>
-                  <code className="cmd-highlight">{steps[activeStepIdx]?.expectedCommand}</code>
+                  {isStatefulGitLab ? (
+                    <>
+                      <p style={{ fontSize: '14px', fontWeight: 600 }}>
+                        {steps[activeStepIdx]?.hint || activeQuest.objective}
+                      </p>
+                      <details className="command-example" key={`${activeQuest.validatorKey}:${activeStepIdx}`}>
+                        <summary>Example command</summary>
+                        <code className="cmd-highlight">{steps[activeStepIdx]?.expectedCommand}</code>
+                      </details>
+                    </>
+                  ) : (
+                    <>
+                      <p style={{ fontSize: '14px', fontWeight: 600 }}>
+                        Type the following command in the terminal prompt:
+                      </p>
+                      <code className="cmd-highlight">{steps[activeStepIdx]?.expectedCommand}</code>
+                    </>
+                  )}
                 </div>
 
                 <div className="steps-progress-checklist">
@@ -1142,70 +1218,33 @@ function App() {
                     Lab Progress {isQuestAlreadyCompleted && "(Review Mode)"}
                   </h4>
                   {steps.map((s, idx) => {
-                    const isStepDone = userData.completedSteps?.includes(`${activeQuest.validatorKey}:${idx}`) || isQuestAlreadyCompleted;
+                    const isStepDone = lessonNavigation.stepCompleted[idx];
                     const isStepActive = idx === activeStepIdx;
                     return (
-                      <div 
+                      <button
+                        type="button"
                         key={idx} 
                         className={`checklist-item ${isStepActive ? 'active' : ''} ${isStepDone ? 'done' : ''}`}
-                        onClick={() => {
-                          if (isQuestAlreadyCompleted) {
-                            setReviewedStepIdx(idx);
-                          }
-                        }}
-                        style={{ cursor: isQuestAlreadyCompleted ? 'pointer' : 'default' }}
+                        aria-current={isStepActive ? 'step' : undefined}
+                        aria-label={`Step ${idx + 1}: ${s.title}${isStepDone ? ', completed' : ', not completed'}`}
+                        onClick={() => selectStep(idx)}
                       >
-                        <span className="chk-icon">{isStepDone ? '✓' : isStepActive ? '●' : '○'}</span>
+                        <span className="chk-icon" aria-hidden="true">{isStepDone ? <Icons.Check /> : idx + 1}</span>
                         <span className="chk-text">{s.title}</span>
-                      </div>
+                      </button>
                     );
                   })}
                 </div>
 
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.01)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
-                  <strong>Hint:</strong> {steps[activeStepIdx]?.hint}
-                </div>
-
-                {isQuestAlreadyCompleted && (
-                  <div className="review-navigation-controls" style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
-                    <button 
-                      className="btn btn-secondary" 
-                      disabled={activeStepIdx === 0}
-                      onClick={() => setReviewedStepIdx(activeStepIdx - 1)}
-                      style={{ flex: 1, padding: '8px 16px', fontSize: '13px' }}
-                    >
-                      ← Previous
-                    </button>
-                    <button 
-                      className="btn btn-secondary" 
-                      disabled={activeStepIdx === steps.length - 1}
-                      onClick={() => setReviewedStepIdx(activeStepIdx + 1)}
-                      style={{ flex: 1, padding: '8px 16px', fontSize: '13px' }}
-                    >
-                      Next →
-                    </button>
+                {!isStatefulGitLab && (
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.01)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
+                    <strong>Hint:</strong> {steps[activeStepIdx]?.hint}
                   </div>
                 )}
+
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '40px 20px' }}>
-                <div style={{ fontSize: '64px' }}>🎉</div>
-                <h3 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--success)' }}>Lab Completed Successfully!</h3>
-                <p style={{ fontSize: '15px', color: 'var(--text-secondary)', maxWidth: '400px' }}>
-                  You have successfully completed all command simulations for <strong>{activeQuest.title}</strong>!
-                </p>
-                <div style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', padding: '16px', borderRadius: '12px', width: '100%' }}>
-                  <span style={{ fontSize: '13px', display: 'block', color: 'var(--text-secondary)' }}>Total Experience Earned</span>
-                  <strong style={{ fontSize: '24px', color: 'var(--success)' }}>
-                    +{steps.length * 20 + (activeQuest.difficulty === 'Beginner' ? 100 : activeQuest.difficulty === 'Intermediate' ? 200 : 300)} XP
-                  </strong>
-                </div>
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <button className="btn btn-primary" onClick={() => { setActiveQuest(null); setReviewedStepIdx(null); }} style={{ padding: '12px 32px' }}>
-                    Return to Roadmap
-                  </button>
-                </div>
-              </div>
+              <p>No interactive steps are available for this quest.</p>
             )}
           </div>
 
@@ -1289,6 +1328,8 @@ function App() {
                   }
                 }}>
                   <textarea
+                    aria-label={`Notes for step ${activeStepIdx + 1}`}
+                    disabled={!activeNoteKey}
                     value={notesText}
                     onChange={(e) => handleNotesChange(e.target.value)}
                     placeholder="Keep step-specific notes, cheat sheets, or commands here..."
@@ -1310,15 +1351,15 @@ function App() {
             </div>
 
             <TerminalSimulator
-              key={`${activeQuest.validatorKey}-${isQuestAlreadyCompleted ? activeStepIdx : 'progress'}`}
+              key={activeQuest.validatorKey}
               questId={activeQuest.title}
               validatorKey={activeQuest.validatorKey}
               interactiveSteps={steps}
               completedSteps={userData.completedSteps || []}
               onStepComplete={handleStepComplete}
               isReviewMode={isQuestAlreadyCompleted}
-              activeStepIndexOverride={isQuestAlreadyCompleted ? activeStepIdx : undefined}
-              onStepChange={(newIdx) => setReviewedStepIdx(newIdx)}
+              activeStepIndexOverride={lessonNavigation.activeStepIndex ?? undefined}
+              onStepChange={selectStep}
             />
 
             {/* Maximized Notes Modal Overlay */}
@@ -1381,6 +1422,8 @@ function App() {
                   </div>
                   <div style={{ flex: 1, padding: '20px', background: '#090d16' }}>
                     <textarea
+                      aria-label={`Expanded notes for step ${activeStepIdx + 1}`}
+                      disabled={!activeNoteKey}
                       value={notesText}
                       onChange={(e) => handleNotesChange(e.target.value)}
                       placeholder="Type your notes or reference commands here... (Step-specific, auto-saved)"
@@ -1417,41 +1460,45 @@ function App() {
           <div className="logo-text">DevOps Odyssey</div>
         </div>
 
-        <nav className="sidebar-nav">
+        <nav className="sidebar-nav" aria-label="Main navigation">
           <div className="nav-section-title">Navigation</div>
-          
-          <div 
+          <div className="sidebar-utility-nav">
+          <button type="button"
             className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
+            aria-current={activeTab === 'dashboard' ? 'page' : undefined}
             onClick={() => { setActiveTab('dashboard'); setVerifyResult(null); }}
           >
             <div className="nav-item-left">
               <Icons.Grid />
               <span>Dashboard</span>
             </div>
-          </div>
+          </button>
 
-          <div 
+          <button type="button"
             className={`nav-item ${activeTab === 'resources' ? 'active' : ''}`}
+            aria-current={activeTab === 'resources' ? 'page' : undefined}
             onClick={() => { setActiveTab('resources'); setVerifyResult(null); }}
           >
             <div className="nav-item-left">
               <Icons.BookOpen />
               <span>Resources Hub</span>
             </div>
-          </div>
+          </button>
 
-          <div 
+          <button type="button"
             className={`nav-item ${activeTab === 'burger' ? 'active' : ''}`}
+            aria-current={activeTab === 'burger' ? 'page' : undefined}
             onClick={() => { setActiveTab('burger'); setVerifyResult(null); }}
           >
             <div className="nav-item-left">
               <Icons.Award />
               <span>DevOps Burger Map</span>
             </div>
-          </div>
+          </button>
 
-          <div 
+          <button type="button"
             className={`nav-item ${activeTab === 'profile' ? 'active' : ''}`}
+            aria-current={activeTab === 'profile' ? 'page' : undefined}
             onClick={() => { setActiveTab('profile'); setVerifyResult(null); }}
           >
             <div className="nav-item-left" style={{ gap: '10px' }}>
@@ -1467,17 +1514,19 @@ function App() {
               )}
               <span>{auth.loggedIn ? auth.name : 'Profile'}</span>
             </div>
+          </button>
           </div>
 
           <div className="nav-section-title">Roadmap Paths</div>
-          
+          <div className="sidebar-module-nav" role="group" aria-label="Roadmap paths">
           {roadmapModules.map((mod) => {
             const status = getModuleStatus(mod);
             const isActive = activeTab === mod.id;
             return (
-              <div
+              <button type="button"
                 key={mod.id}
                 className={`nav-item ${isActive ? 'active' : ''}`}
+                aria-current={isActive ? 'page' : undefined}
                 onClick={() => handleModuleClick(mod.id)}
               >
                 <div className="nav-item-left">
@@ -1487,9 +1536,10 @@ function App() {
                 <span className={`module-badge ${status === 'COMPLETED' ? 'completed' : ''}`}>
                   {status === 'COMPLETED' ? 'Done' : status === 'IN_PROGRESS' ? `${mod.quests.filter(q => userData.completedQuests.includes(q.validatorKey)).length}/${mod.quests.length}` : '0%'}
                 </span>
-              </div>
+              </button>
             );
           })}
+          </div>
         </nav>
 
         <div className="sidebar-footer">
@@ -1507,7 +1557,7 @@ function App() {
       </aside>
 
       {/* MAIN CONTENT */}
-      <main className="main-content" style={{ display: 'flex', flexDirection: 'column', gap: '32px', padding: '40px 60px' }}>
+      <main className="main-content">
         {apiError && (
           <div className="verify-result error" style={{ margin: 0 }}>
             <Icons.Info />
@@ -1521,7 +1571,7 @@ function App() {
         {/* HEADER */}
         <header className="header" style={{ margin: 0 }}>
           <div>
-            <h1 className="header-title" style={{ fontSize: '36px' }}>
+            <h1 className="header-title">
               {activeTab === 'dashboard' && "Command Center"}
               {activeTab === 'resources' && "Resource Hub"}
               {activeTab === 'burger' && "DevOps Burger Map"}
@@ -1538,8 +1588,8 @@ function App() {
           </div>
 
           {userData && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div className="header-account">
+              <div className="header-account-controls">
                 {!auth.loggedIn && (
                   <div className="google-signin-slot header-slot">
                     <div id="google-signin-button-header" className="google-rendered-button"></div>
@@ -1609,10 +1659,10 @@ function App() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
             
             {/* ROW 1: JOURNEY PROGRESS CHART & NEXT QUEST */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.8fr', gap: '32px' }}>
+            <div className="dashboard-overview-grid">
               
               {/* Circular Overall Progress Ring */}
-              <div className="glass-panel stat-card" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', padding: '32px' }}>
+              <div className="glass-panel stat-card dashboard-overall-progress" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', padding: '32px' }}>
                 <div>
                   <div className="stat-title" style={{ fontSize: '13px', letterSpacing: '1px' }}>Global Progress</div>
                   <div className="stat-value" style={{ fontSize: '42px', margin: '8px 0' }}>{progressPercent}%</div>
@@ -1703,7 +1753,7 @@ function App() {
             {/* ROW 2: PROGRESS BY 4 DEV-OPS CATEGORIES */}
             <div className="glass-panel" style={{ padding: '32px' }}>
               <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '24px', letterSpacing: '-0.3px' }}>Progress Analytics by Sub-discipline</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
+              <div className="category-progress-grid">
                 {categories.map((cat, idx) => {
                   const progress = getCategoryProgress(cat.moduleIds);
                   return (
@@ -2034,24 +2084,71 @@ function App() {
                     </div>
                   </div>
 
-                  <div>
+                  {(module.keyConcepts?.length ?? 0) > 0 && (
+                    <div className="key-concepts-grid">
+                      {module.keyConcepts!.map((concept, idx) => (
+                        <div key={idx} className="key-concept-card">
+                          <h5>{concept.icon && <span>{concept.icon}</span>} {concept.title}</h5>
+                          <p>{concept.description}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {(module.commandCheatSheet?.length ?? 0) > 0 && (
+                    <div className="cheat-sheet-section">
+                      <h4>⚡ Command Cheat Sheet</h4>
+                      <div className="cheat-sheet-scroll" role="region" aria-label="Command cheat sheet" tabIndex={0}>
+                      <table className="cheat-sheet-table">
+                        <thead>
+                          <tr>
+                            <th>Command</th>
+                            <th>Description</th>
+                            <th>Example</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {module.commandCheatSheet!.map((cmd, idx) => (
+                            <tr key={idx}>
+                              <td><code>{cmd.command}</code></td>
+                              <td>{cmd.description}</td>
+                              <td>{cmd.example ? <code>{cmd.example}</code> : '-'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {module.learningPath && (
+                    <div className="learning-path-card">
+                      <h4>Learning Path</h4>
+                      <p>{module.learningPath}</p>
+                    </div>
+                  )}
+
+                  {(module.modulePrerequisites?.length ?? 0) > 0 && (
+                    <div className="module-prerequisites">
+                      <h4>Prerequisites</h4>
+                      <ul>
+                        {module.modulePrerequisites!.map((req, idx) => (
+                          <li key={idx}>{req}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  <div style={{ marginTop: '32px' }}>
                     <h2 style={{ fontSize: '20px', marginBottom: '16px', fontWeight: 700 }}>Practical Quests</h2>
                     {module.quests.map((q) => {
                       const isCompleted = userData?.completedQuests.includes(q.validatorKey);
                       const isActive = activeQuest?.id === q.id;
                       return (
-                        <div
+                        <button type="button"
                           key={q.id}
                           className={`quest-item ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}`}
-                          onClick={() => {
-                            setActiveQuest(q);
-                            setVerifyResult(null);
-                            if (userData?.completedQuests.includes(q.validatorKey)) {
-                              setReviewedStepIdx(0);
-                            } else {
-                              setReviewedStepIdx(null);
-                            }
-                          }}
+                          onClick={() => openQuest(q)}
                         >
                           <div className="quest-meta">
                             <span className="quest-name">
@@ -2063,9 +2160,9 @@ function App() {
                             </span>
                           </div>
                           <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                            {isCompleted ? "+ XP Claimed" : `+ ${q.difficulty === 'Beginner' ? '100' : '200'} XP`}
+                            {isCompleted ? "+ XP Claimed" : `+ ${q.difficulty === 'Beginner' ? '100' : q.difficulty === 'Intermediate' ? '200' : '300'} XP`}
                           </span>
-                        </div>
+                        </button>
                       );
                     })}
                   </div>
@@ -2264,7 +2361,7 @@ function App() {
                           ) : (
                             <button 
                               className="btn btn-primary pulse-glow" 
-                              onClick={() => handleVerify(activeQuest)}
+                              onClick={verifyActiveQuest}
                               disabled={verifying}
                               style={{ width: '100%', padding: '14px', marginBottom: '16px' }}
                             >
