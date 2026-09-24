@@ -4,7 +4,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
-RUN npm run build
+RUN npx vite build
 
 # 2. Aşama: Çalıştırma (Node.js API + Frontend)
 FROM node:20-alpine
