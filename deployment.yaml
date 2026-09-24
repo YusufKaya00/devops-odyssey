@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devops-odyssey
+  labels:
+    app: devops-odyssey
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: devops-odyssey
+  template:
+    metadata:
+      labels:
+        app: devops-odyssey
+    spec:
+      containers:
+        - name: app
+          image: devops-odyssey:v1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5001
