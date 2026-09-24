@@ -728,7 +728,7 @@ function App() {
     setVerifying(true);
     setVerifyResult(null);
     try {
-      const res = await fetch('http://localhost:5001/api/verify', {
+      const res = await fetch('/api', {
         method: 'POST',
         headers: getHeaders(),
         body: JSON.stringify({
