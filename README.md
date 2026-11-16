@@ -16,6 +16,7 @@ Learners can solve curated hands-on scenarios in two distinct environments:
 
 ## 📖 Table of Contents
 
+- [Page Showcase](#-page-showcase)
 - [Project Overview & Purpose](#-project-overview--purpose)
 - [Key Features](#️-key-features)
 - [System Architecture](#️-system-architecture)
@@ -35,6 +36,40 @@ Learners can solve curated hands-on scenarios in two distinct environments:
 - [Troubleshooting](#-troubleshooting)
 - [Contributing](#-contributing)
 - [License](#-license)
+
+---
+
+## 📸 Page Showcase
+
+### Command Center Dashboard
+Global progress metrics, XP/level indicator, active streak tracker, next recommended lab target, and sub-discipline breakdown across all 12 curriculum stages.
+
+![Command Center Dashboard](docs/screenshots/dashboard.png)
+
+### Focused Lab & In-Browser Terminal Simulator
+Split-screen hands-on lab view pairing step-by-step DevOps theory, expected commands, and personal notes with an interactive terminal simulator (`TerminalSimulator`).
+
+![Focused Lab and Terminal Simulator](docs/screenshots/terminal-lab.png)
+
+### Curriculum Module View (Containers & Docker)
+Per-module knowledge base with curated reference links, practical quests tagged by difficulty and XP, and an unlockable final quiz checkpoint.
+
+![Curriculum Module View](docs/screenshots/module-docker.png)
+
+### Resource Hub
+Curated DevOps engineering books and a categorized industry tools & landscape directory.
+
+![Resource Hub](docs/screenshots/resources.png)
+
+### DevOps Burger Map
+Interactive layered architecture view ("DevOps as a Burger") mapping each stack layer directly to its corresponding roadmap module.
+
+![DevOps Burger Map](docs/screenshots/burger-map.png)
+
+### User Profile & Achievements
+Guest and Google OAuth2-synced profile overview displaying earned XP, completed quests, active streak, storage mode, and unlockable badges.
+
+![User Profile and Achievements](docs/screenshots/profile.png)
 
 ---
 
